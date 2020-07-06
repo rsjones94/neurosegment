@@ -14,7 +14,7 @@ The procedure for extracting the midsagittal plane is based on the paper
 """
 
 import numpy as np
-from skimage import img_as_float64
+import sympy as sp
 from scipy import ndimage
 import nibabel as nib
 from deepbrain import Extractor
@@ -127,7 +127,8 @@ def binary_by_percentile_threshold(img, threshold=95, invert=False):
     
     return filtered.astype(int), absolute_thresh
     
-    
+
+'''  DEFUNCT: sympy has built in functionality to do this
 def reflect_across_line(coords, line):
     """
     Finds the coordinates of a 2d point reflected across a given line.
@@ -165,6 +166,171 @@ def reflect_across_line(coords, line):
     q = result[1][0]
     
     return r,q
+'''
+
+
+def intersection_of_plane_with_slice(slice_index, plane):
+    """
+    ASSUMING AXIAL ORIENTATION, finds the line that repreents the interection
+    between the two planes IN 2D
+    
+
+    Parameters
+    ----------
+    slice_index : int
+        the z index of the axial slice.
+    plane : sympy Plane object
+        The plane of interest.
+
+    Returns
+    -------
+    sympy Line2D object.
+
+    """
+
+    # set up the plane of the slice
+    flat_plane = sp.Plane((1,0,slice_index),(-1,0,slice_index),(0,1,slice_index))
+    
+    inter = plane.intersection(flat_plane)[0]
+    
+    intersection_2d = sp.Line(
+        (inter.p1[0], inter.p1[1]),(inter.p2[0], inter.p2[1])
+    )
+    
+    return intersection_2d
+
+
+def evaluate_x_on_line(x, line):
+    """
+    Finds the y for a given x on a line
+    
+
+    Parameters
+    ----------
+    x : int or float
+        x to be evaluated.
+    line  sympy line2d object
+        DESCRIPTION.
+
+    Returns
+    -------
+    The value of y at x.
+
+    """
+    A, B, C = line.coefficients
+    
+    m = -A/B
+    b = -C/B
+    
+    return m*x + b
+
+
+def calculate_projected_plane_coords(slice_index, plane, x_domain = (0,500)):
+    """
+    Gets the coordinates the interection of a plane with your axial slice, primarily
+    for plotting purposes
+    
+
+    Parameters
+    ----------
+    slice_index : int
+        index of the axial slice
+    plane : sympy Plane object
+        Plane to be drawn.
+    x_domain: tuple of ints or floats
+        The domain to be plotted on
+
+    Returns
+    -------
+    Tuple of lists containing the x and y coords of the intersecting line.
+
+    """
+
+    inter = intersection_of_plane_with_slice(slice_index, plane)
+    intersection_2d = sp.Line(
+        (inter.p1[0], inter.p1[1]),(inter.p2[0], inter.p2[1])
+    )
+    
+    exes = np.arange(x_domain[0], x_domain[1])
+    whys = [evaluate_x_on_line(x, intersection_2d) for x in exes] 
+    
+    
+    return exes, whys
+
+
+def is_partnered(coordinates, image, line):
+    """
+    Given a binary image and a reflecting line, checks if an input pixel has
+    the same value as its reflection across the line iff the original pixel value
+    is 1. If the original value is 1, always returns false
+    
+
+    Parameters
+    ----------
+    coordinates : tuple of ints
+        coordinates of the pixel in question.
+    image : 2d numpy array
+        a 2d slice of an image.
+    line : sympy line2d object
+        a 2d sympy line.
+
+    Returns
+    -------
+    A bool indicating if the value at the reflected coordinates is 1.
+
+    """
+    x, y = coordinates
+    original_val = image[x,y]
+    if original_val == 0:
+        return False
+    original_coords= sp.Point(coordinates[0],coordinates[1])
+    reflected_coords = original_coords.reflect(line)
+    # not always going to be an int, need to coerce
+    rx, ry = round(reflected_coords[0]), round(reflected_coords[1])
+
+    
+    try:
+        reflected_val = image[rx,ry]
+    except IndexError:
+        return False
+    
+        
+    # print(f'Original: {x},{y} is {original_val}')
+    # print(f'Reflected: {rx},{ry} is {reflected_val}')
+    
+    return original_val == reflected_val
+
+
+def score_midsagittal(image, plane):
+    """
+    Scores the quality of an approximated midsagittal plane based on symmetry of
+    the BINARY-ized Sobel-filtered scan
+    
+
+    Parameters
+    ----------
+    image : 3d numpy array
+        An axial scan.
+    plane : sympy plane object
+        The plane that approximates the midsagittal plane.
+
+    Returns
+    -------
+    A score as a float between 0 and 1, where 1 is perfect.
+
+    """
+    
+    num_z_levels = image.shape[2]
+
+    n_edges = np.count_nonzero(image) # number of voxels with value of 1
+    n_paired = 0
+    
+    for z in range(num_z_levels):
+        sub_image = image[:,:,z]
+        reflecting_line = intersection_of_plane_with_slice(z, plane)
+        
+    
+
     
     
     
