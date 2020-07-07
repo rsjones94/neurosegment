@@ -276,13 +276,14 @@ def is_partnered(coordinates, image, line):
 
     Returns
     -------
-    A bool indicating if the value at the reflected coordinates is 1.
+    A logical bit indicating if the values at the both the original and reflected
+    coordinates are 1.
 
     """
     x, y = coordinates
     original_val = image[x,y]
     if original_val == 0:
-        return False
+        return 0
     original_coords= sp.Point(coordinates[0],coordinates[1])
     reflected_coords = original_coords.reflect(line)
     # not always going to be an int, need to coerce
@@ -292,16 +293,16 @@ def is_partnered(coordinates, image, line):
     try:
         reflected_val = image[rx,ry]
     except IndexError:
-        return False
+        return 0
     
         
     # print(f'Original: {x},{y} is {original_val}')
     # print(f'Reflected: {rx},{ry} is {reflected_val}')
     
-    return original_val == reflected_val
+    return int(original_val == reflected_val)
 
 
-def score_midsagittal(image, plane):
+def score_midsagittal(image, plane, n_slices=None):
     """
     Scores the quality of an approximated midsagittal plane based on symmetry of
     the BINARY-ized Sobel-filtered scan
@@ -313,6 +314,10 @@ def score_midsagittal(image, plane):
         An axial scan.
     plane : sympy plane object
         The plane that approximates the midsagittal plane.
+    n_slices: int
+        The number of slices to actually use to calculate the score. Must be
+        equal to or less than the number of slices in the image. Used to reduce
+        runetime. If None, all slices will be used
 
     Returns
     -------
@@ -322,12 +327,22 @@ def score_midsagittal(image, plane):
     
     num_z_levels = image.shape[2]
 
-    n_edges = np.count_nonzero(image) # number of voxels with value of 1
+    n_edges = 0 # number of voxels with value of 1
     n_paired = 0
     
     for z in range(num_z_levels):
         sub_image = image[:,:,z]
+        n_edges += sum(sum(sub_image))
         reflecting_line = intersection_of_plane_with_slice(z, plane)
+        print(f'On level --{z}-- ({sum(sum(sub_image))} pixels to check)')
+        
+        scoreboard = np.zeros((image.shape[0], image.shape[1]))
+        for x in range( image.shape[0]):
+            for y in range(image.shape[1]):
+                scoreboard[x,y] = is_partnered((x,y), sub_image, reflecting_line)
+        n_paired += sum(sum(scoreboard))
+        
+    return n_paired / n_edges
         
     
 

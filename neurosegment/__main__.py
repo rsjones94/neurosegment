@@ -9,7 +9,9 @@ Main entry point for neurosegment
 import sympy as sp
 import matplotlib.pyplot as plt
 
-from preprocessing import read_nifti, skull_strip, sobelize, binary_by_percentile_threshold, calculate_projected_plane_coords, is_partnered, intersection_of_plane_with_slice
+from preprocessing import read_nifti, skull_strip, sobelize, binary_by_percentile_threshold
+from preprocessing import calculate_projected_plane_coords, is_partnered, intersection_of_plane_with_slice
+from preprocessing import score_midsagittal
 
 
 px, py = (238, 242)
@@ -58,4 +60,5 @@ plt.show()
 isp = is_partnered((px,py), edge_data, the_line)
 print(isp)
 
+sc = score_midsagittal(edge_img, arbitrary_plane, None)
 
