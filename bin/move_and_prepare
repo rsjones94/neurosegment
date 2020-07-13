@@ -54,8 +54,8 @@ signature_relationships = {'FLAIR_cor':
 # list of dicts giving parameters for FAST
 # inputs are image signatures
 fast_params = [
-                {'inputs':['FLAIR_cor', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
-                {'inputs':['FLAIR_cor'], 'baseout':'fast_FLAIR', 'n':4},
+                {'inputs':['FLAIR_AX', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
+                {'inputs':['FLAIR_AX'], 'baseout':'fast_FLAIR', 'n':4},
                 {'inputs':['3DT1'], 'baseout':'fast_T1', 'n':4}
               ]
     
@@ -270,7 +270,7 @@ for pt in pt_ids:
         for param_dict in fast_params:
             construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])}'
             if len(param_dict['inputs']) > 1:
-                construction += '-S { len(param_dict["inputs"])}'
+                construction += f' -S {len(param_dict["inputs"])}'
             for sig in param_dict['inputs']:
                 construction += f' {sig_tracker[sig]["final_nifti"]}'
                 
