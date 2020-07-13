@@ -268,9 +268,9 @@ for pt in pt_ids:
         os.mkdir(fast_folder)
         
         for param_dict in fast_params:
-            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])} '
+            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])}'
             if len(param_dict['inputs']) > 1:
-                construction += '-S {len(param_dict["inputs"]}'
+                construction += '-S { len(param_dict["inputs"])}'
             for sig in param_dict['inputs']:
                 construction += f' {sig_tracker[sig]["final_nifti"]}'
                 
