@@ -46,18 +46,20 @@ path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
 signature_relationships = {'FLAIR_cor':
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no'},
                           'FLAIR_AX':
-                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes'},
+                              {'basename': 'axFLAIR', 'register': 'yes', 'skullstrip': 'yes'},
                           '3DT1': 
-                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes'},
+                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes'},
                           }
     
 # list of dicts giving parameters for FAST
 # inputs are image signatures
-fast_params = [
+"""fast_params = [
                 {'inputs':['FLAIR_AX', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
                 {'inputs':['FLAIR_AX'], 'baseout':'fast_FLAIR', 'n':4},
                 {'inputs':['3DT1'], 'baseout':'fast_T1', 'n':4}
-              ]
+              ]"""
+
+fast_params = []
     
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
@@ -129,6 +131,7 @@ except AssertionError:
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%y-%H:%M")
 message_file_name = os.path.join(targetfolder, f'move_and_prepare_messages_{dt_string}.txt')
+df_file_name = os.path.join(targetfolder, f'move_and_prepare_tabular_{dt_string}.csv')
 message_file = open(message_file_name, 'w')
 message_file.write('Status messages for move_and_prepare\n\nSignatures')
 for key, val in signature_relationships.items():
@@ -137,6 +140,7 @@ message_file.write('\n\n\n')
 
 #extract pt IDs
 pt_data = pd.read_csv(infile)
+n_unique_pts = len(pt_data)
 
 pt_ids = []
 for col in pt_id_cols:
@@ -265,7 +269,9 @@ for pt in pt_ids:
         
         # fun FAST. note that the loop will be skipped if the fast_params list is empty, but the folder will still be created
         fast_folder = os.path.join(master_output_folder, 'fast')
-        os.mkdir(fast_folder)
+        
+        if fast_params: # if fast_params is not empty
+            os.mkdir(fast_folder)
         
         for param_dict in fast_params:
             construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])}'
@@ -284,10 +290,13 @@ end = time()
 runtime = end-start
 runtime_minutes_pretty = round(runtime/60, 2)
         
-message_file.write(f'Successfully preprocessed {successful} of {len(pt_ids)} patients. Running time: {runtime_minutes_pretty} minutes\n\n\n')
+message_file.write(f'Successfully preprocessed {successful} of {len(pt_ids)} scans from {n_unique_pts} unique patients. Running time: {runtime_minutes_pretty} minutes\n\n\n')
+df = pd.DataFrame()
 for key, val in pt_status.items():
     message_file.write(f'Patient {key}\n\t{str(val)}\n\n')
+    appender = pd.Series(val, name=key)
+    df = df.append(appender)
     
 
 message_file.close()
-
+df.to_csv(df_file_name)
