@@ -4,6 +4,8 @@
 Executable to that reads in a list of patient IDs, finds specified imagery,
 converts them to NiFTI format, skullstrips and coregisters them (if desired).
 
+Also does FAST segmentation
+
 Takes the following arguments in the shell
     -i : a comma-delimited csv containing columns of pt IDs
     -f : the folder that contains subfolder of pt data. can be nested
@@ -16,7 +18,7 @@ any, could not be located, and if any FLAIR or T1 data could not be found.
 
 Example use:
     
-    /Users/manusdonahue/Documents/Sky/repositories/neurosegment/bin/move_and_prepare -i /Users/manusdonahue/Documents/Sky/stroke_segmentations_playground/pts_of_interest.csv -t /Users/manusdonahue/Documents/Sky/stroke_segmentations_playground/pt_data -o 1 -f /Volumes/DonahueDataDrive/Data_sort/SCD_Grouped
+    /Users/manusdonahue/Documents/Sky/repositories/neurosegment/bin/move_and_prepare -i /Users/manusdonahue/Documents/Sky/stroke_segmentations_playground/pts_of_interest.csv -t /Users/manusdonahue/Documents/Sky/stroke_segmentations_playground/pt_data -f /Volumes/DonahueDataDrive/Data_sort/SCD_Grouped -o 0
 """
 
 import os
@@ -26,6 +28,7 @@ import glob
 import shutil
 from datetime import datetime
 from contextlib import contextmanager
+from time import time
 
 import pandas as pd
 
@@ -48,9 +51,19 @@ signature_relationships = {'FLAIR_cor':
                               {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes'},
                           }
     
+# list of dicts giving parameters for FAST
+# inputs are image signatures
+fast_params = [
+                {'inputs':['FLAIR_cor', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
+                {'inputs':['FLAIR_cor'], 'baseout':'fast_FLAIR', 'n':4},
+                {'inputs':['3DT1'], 'baseout':'fast_T1', 'n':4}
+              ]
+    
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
 #####
+
+start = time()
 
 @contextmanager
 def suppress_stdout():
@@ -248,11 +261,33 @@ for pt in pt_ids:
                 
         pt_status[pt]['successful'] = 1
         successful += 1
+        
+        
+        # fun FAST. note that the loop will be skipped if the fast_params list is empty, but the folder will still be created
+        fast_folder = os.path.join(master_output_folder, 'fast')
+        os.mkdir(fast_folder)
+        
+        for param_dict in fast_params:
+            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])} '
+            if len(param_dict['inputs']) > 1:
+                construction += '-S {len(param_dict["inputs"]}'
+            for sig in param_dict['inputs']:
+                construction += f' {sig_tracker[sig]["final_nifti"]}'
+                
+            print(f'Construction:\n{construction}')
+            os.system(construction)
 
 # write status log
+            
+end = time()
+
+runtime = end-start
+runtime_minutes_pretty = round(runtime/60, 2)
         
-message_file.write(f'Successfully preprocessed {successful} of {len(pt_ids)} patients\n\n\n')
+message_file.write(f'Successfully preprocessed {successful} of {len(pt_ids)} patients. Running time: {runtime_minutes_pretty} minutes\n\n\n')
 for key, val in pt_status.items():
     message_file.write(f'Patient {key}\n\t{str(val)}\n\n')
+    
+
 message_file.close()
 
