@@ -1,2 +1,2 @@
-# neurosegment
-Automated segmentation of cerebral infarcts from MRI images
+# data_inspection
+Preliminary inspection of patient data to detect problems with data quality before publication.
