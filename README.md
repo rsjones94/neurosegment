@@ -1,3 +1,2 @@
 # neurosegment
-
-Brain segmentation
+Automated segmentation of cerebral infarcts from MRI images
