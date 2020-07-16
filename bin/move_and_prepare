@@ -35,7 +35,7 @@ import pandas as pd
 ##### the following variables generally just need to be set once
 
 # column names in the csv that contain pt IDs of interest
-pt_id_cols = ['mr1_mr_id', 'mr2_mr_id', 'mr3_mr_id']
+pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
 
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
 path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
@@ -46,9 +46,9 @@ path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
 signature_relationships = {'FLAIR_cor':
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no'},
                           'FLAIR_AX':
-                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes'},
+                              {'basename': 'axFLAIR', 'register': 'yes', 'skullstrip': 'yes'},
                           '3DT1': 
-                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes'},
+                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes'},
                           }
     
 # list of dicts giving parameters for FAST
