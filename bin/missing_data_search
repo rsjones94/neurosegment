@@ -7,6 +7,7 @@ Script that iterates through scan folders and catalogues what images are present
 """
 
 import os
+import glob
 
 import pandas as pd
 
@@ -17,29 +18,177 @@ study_id_col = 'study_id'
 output_name = '/Users/manusdonahue/Documents/Sky/missing_data_search.csv'
 scan_id_csv = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
 
+# parent folder that house the scan folders
+filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped'
+
 scan_relationships = {
                       'axial_t1':
-                          {'sigs': ['T13D'], 'exts': ['par','rec']},
+                          {'sigs': ['3DT1'], 'exts': ['PAR','REC']},
                       'coronal_flair':
-                          {'sigs': ['FLAIR_cor'], 'exts': ['par','rec']},
+                          {'sigs': ['FLAIR_cor'], 'exts': ['PAR','REC']},
                       'axial_flair':
-                          {'sigs': ['FLAIR_AX'], 'exts': ['par','rec']}
+                          {'sigs': ['FLAIR_AX'], 'exts': ['PAR','REC']}
                       }
+
     
 ##########
     
+def find_stem(arr):
+    """
+    Shamelessly stolen from geeksforgeeks. Finds the longest common substring
+    in an array of strings
+
+    Parameters
+    ----------
+    arr : list of strings
+        list of strings.
+
+    Returns
+    -------
+    res : str
+        the longest substring common to all the input strings.
+
+    """
+  
+    # Determine size of the array 
+    n = len(arr)
+    
+    if n == 0:
+        return ''
+  
+    # Take first word from array  
+    # as reference 
+    s = arr[0] 
+    l = len(s) 
+  
+    res = "" 
+  
+    for i in range( l) : 
+        for j in range( i + 1, l + 1) : 
+  
+            # generating all possible substrings 
+            # of our reference string arr[0] i.e s 
+            stem = s[i:j] 
+            k = 1
+            for k in range(1, n):  
+  
+                # Check if the generated stem is 
+                # common to all words 
+                if stem not in arr[k]: 
+                    break
+              
+            # If current substring is present in 
+            # all strings and its length is greater  
+            # than current result 
+            if (k + 1 == n and len(res) < len(stem)): 
+                res = stem 
+  
+    return res
+    
+def get_terminal(path):
+    """
+    Takes a filepath or directory tree and returns the last file or directory
+    
+
+    Parameters
+    ----------
+    path : path
+        path in question.
+
+    Returns
+    -------
+    str of only the final file or directory.
+
+    """
+    return os.path.basename(os.path.normpath(path))
+    
+
 df = pd.read_csv(scan_id_csv, sep=',',
                  low_memory=False, dtype={study_id_col:'object'})
 
-out_cols = ['study_id', 'mr_id', 'scan_id', 'found_master',
-            'found_acquired', 'found_processed', 'complete', 'common_name']
+out_cols = ['study_id', 'mr_id', 'scan_id', 'found_master', 'complete',
+            'found_acquired', 'found_processed',
+            'common_name_acquired', 'common_name_processed']
 out_cols.extend(scan_relationships.keys())
 
 blank_dict = {c: None for c in out_cols}
+out_df = pd.DataFrame(columns=out_cols)
 blank_row = pd.Series(blank_dict)
+
+all_subdirectories = [x[0] for x in os.walk(filefolder)] # list of all possible subdirectories
 
 for index, row in df.iterrows():
     study_id = row[study_id_col]
-    for mr, sc in zip(mr_id_cols, scan_id_cols):
-        pass
+    for mr_col, sc_col in zip(mr_id_cols, scan_id_cols):
+        mr = row[mr_col]
+        sc = row[sc_col]
+        if pd.isnull(mr) and pd.isnull(sc):
+            continue
+        elif pd.isnull(mr) or pd.isnull(sc):
+            print(f'------ only one of {(mr, sc)} is blank')
+            continue
+        
+        working_row = blank_row.copy()
+        working_row['study_id'] = study_id
+        working_row['mr_id'] = mr
+        working_row['scan_id'] = sc
+        
+        # 1st step - see if we can find the master folder
+        candidate_folders = [sub for sub in all_subdirectories if get_terminal(sub) == mr] # check if last subfolder is scan name
+        n_cands = len(candidate_folders)
+        working_row['found_master'] = n_cands
+        if n_cands == 1:
+            data_folder = candidate_folders[0]
+        else:
+            print(f'------ pt {mr} has {n_cands} candidate folders. skipping ------')
+            out_df = out_df.append(working_row, ignore_index=True)
+            continue
+        
+        # 2nd step - confirm that the "acquired" and "processed" folders exist
+        acq_folder = os.path.join(data_folder, 'acquired')
+        pro_folder = os.path.join(data_folder, 'processed')
+        
+        has_acq = int(os.path.exists(acq_folder))
+        has_pro = int(os.path.exists(pro_folder))
+        
+        working_row['found_acquired'] = has_acq
+        working_row['found_processed'] = has_pro
+        
+        # 3rd step - try to find each signature
+        
+        for signature, subdict in scan_relationships.items():
+            possible_sigs = subdict['sigs']
+            all_cands = [[] for ext in subdict['exts']]
+            for sig in possible_sigs:
+                # list of lists: each sublist is all the files in the scan folder that match the pattern
+                candidates = [glob.glob(os.path.join(data_folder, '**', f'*{sig}*.{ext}'), recursive=True) for ext in subdict['exts']]
+                for i, ext in enumerate(subdict['exts']):
+                    all_cands[i].extend(candidates[i])
+            n_cand_files = [len(c) for c in all_cands]
+            working_row[signature] = n_cand_files
+            has_one_match_for_all_sigs = all([n==1 for n in n_cand_files])
+            working_row['complete'] = int(has_one_match_for_all_sigs)
+            
+        # 4th step - try to extract the longest common string from each subfolder
+        # this should ostensibly be the MR ID, but may be a deidentified pt name
+        for sf, key, ext in ([acq_folder, 'common_name_acquired', 'PAR'], [pro_folder, 'common_name_processed', 'nii.gz']): # sf is subfolder
+            if not os.path.exists(sf):
+                working_row[key] = ''
+                continue
+            files = glob.glob(os.path.join(sf, f'*.{ext}'))
+            terms_only = [get_terminal(f) for f in files] # get the file names
+            terms_only = [f for f in terms_only if 'temp' not in f] # filter out "temp" files
+            ln = len(ext)
+            terms_only = [f[:-ln] for f in terms_only] # remove extensions - nii.gz is so long it sometimes occludes meaningful substrings
+            stem = find_stem(terms_only)
+            if any(s in stem for s in ['Jordan', 'Donahue', 'SCD']): # if these strings are in there then that's normal
+                stem = ''
+            working_row[key] = stem
+        
+        # finally - append what we've learned
+        out_df = out_df.append(working_row, ignore_index=True)
+        
+# now write the final output
+out_df.to_csv(output_name)
+        
 
