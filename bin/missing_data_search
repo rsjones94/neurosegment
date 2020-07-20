@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Script that iterates through scan folders and catalogues what images are present
+(or missing). Also checks to see if the data has ben deidentified and if a
+"processed" folder exists
+"""
+
+import os
+
+import pandas as pd
+
+mr_id_cols = ['mr1_mr_id', 'mr2_mr_id', 'mr3_mr_id']
+scan_id_cols = ['mr1_scan_id', 'mr2_scan_id', 'mr3_scan_id']
+study_id_col = 'study_id'
+
+output_name = '/Users/manusdonahue/Documents/Sky/missing_data_search.csv'
+scan_id_csv = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
+
+scan_relationships = {
+                      'axial_t1':
+                          {'sigs': ['T13D'], 'exts': ['par','rec']},
+                      'coronal_flair':
+                          {'sigs': ['FLAIR_cor'], 'exts': ['par','rec']},
+                      'axial_flair':
+                          {'sigs': ['FLAIR_AX'], 'exts': ['par','rec']}
+                      }
+    
+##########
+    
+df = pd.read_csv(scan_id_csv, sep=',',
+                 low_memory=False, dtype={study_id_col:'object'})
+
+out_cols = ['study_id', 'mr_id', 'scan_id', 'found_master',
+            'found_acquired', 'found_processed', 'complete', 'common_name']
+out_cols.extend(scan_relationships.keys())
+
+blank_dict = {c: None for c in out_cols}
+blank_row = pd.Series(blank_dict)
+
+for index, row in df.iterrows():
+    study_id = row[study_id_col]
+    for mr, sc in zip(mr_id_cols, scan_id_cols):
+        pass
+
