@@ -25,9 +25,9 @@ scan_relationships = {
                       'axial_t1':
                           {'sigs': ['3DT1'], 'exts': ['PAR','REC']},
                       'coronal_flair':
-                          {'sigs': ['FLAIR_cor'], 'exts': ['PAR','REC']},
+                          {'sigs': ['FLAIR_cor', 'T2W_FLAIR_CORONAL'], 'exts': ['PAR','REC']},
                       'axial_flair':
-                          {'sigs': ['FLAIR_AX'], 'exts': ['PAR','REC']}
+                          {'sigs': ['FLAIR_AX', 'T2W_FLAIR'], 'exts': ['PAR','REC']}
                       }
 
     
@@ -126,7 +126,6 @@ for index, row in df.iterrows():
             continue
         elif pd.isnull(mr) or pd.isnull(sc):
             print(f'------ only one of {(mr, sc)} is blank')
-            continue
         
         working_row = blank_row.copy()
         working_row['study_id'] = study_id

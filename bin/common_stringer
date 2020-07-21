@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Counts to occurrences of common substrings in files of a given type in a folder
+(recursive)
+"""
+
+import os
+import glob
+from collections import Counter
+
+import pandas as pd
+
+
+filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped'
+file_types = ['PAR', 'nii.gz']
+out_folder = '/Users/manusdonahue/Documents/Sky/scd_substrings/'
+keyword_sep = '_'
+
+##########
+
+
+def get_terminal(path):
+    """
+    Takes a filepath or directory tree and returns the last file or directory
+    
+
+    Parameters
+    ----------
+    path : path
+        path in question.
+
+    Returns
+    -------
+    str of only the final file or directory.
+
+    """
+    return os.path.basename(os.path.normpath(path))
+
+
+for ext in file_types:
+    glob_path = os.path.join(filefolder, '**', f'*.{ext}')
+    full_files = glob.glob(glob_path, recursive=True)
+    files = [get_terminal(f)[:(-len(ext)-1)] for f in full_files] # strip preceding path and extension
+    keyword_sublists = [f.split(keyword_sep) for f in files]
+    keywords = [j for i in keyword_sublists for j in i] # concats the sublists into one list
+    
+    frequencies = Counter(keywords)
+    ordered_freqs = {key: val for key, val in frequencies.most_common()}
+    
+    out = pd.Series(ordered_freqs)
+    out_name = os.path.join(out_folder, f'{ext.replace(".","-")}.csv')
+    out.to_csv(out_name)
