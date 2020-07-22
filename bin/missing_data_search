@@ -21,6 +21,8 @@ scan_id_csv = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
 # parent folder that house the scan folders
 filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped'
 
+
+# what happens if the signature of one is a substring of another????
 scan_relationships = {
                       'axial_t1':
                           {'sigs': ['3DT1'], 'exts': ['PAR','REC']},
