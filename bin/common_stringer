@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Counts to occurrences of common substrings in files of a given type in a folder
+Counts the occurrences of common substrings in files of a given type in a folder
 (recursive)
 """
 
 import os
 import glob
 from collections import Counter
+from itertools import combinations
 
 import pandas as pd
 
@@ -38,7 +39,64 @@ def get_terminal(path):
     return os.path.basename(os.path.normpath(path))
 
 
+def get_all_substrings(s):
+    length = len(s) + 1
+    return [s[x:y] for x, y in combinations(range(length), r=2)]
+
+
+def find_stem(arr):
+    """
+    Finds the longest common substring in a list of strings
+    """
+    longest_substring = ''
+    longest_length = 0
+    for s in arr:
+        subs = get_all_substrings(s)
+        for sub in subs:
+            if all([sub in k for k in arr]) and len(sub) > longest_length:
+                longest_substring = sub
+                longest_length = len(sub)
+                
+    return longest_substring
+
+
+def cut_trailing(s, forbidden, neutral, extra_strip=0):
+    """
+    Keeps only characters up until the place where 
+    
+    forbidden and neutral can be passed as either a list of substrings or a dense string
+    eg., ['a','b'] and 'ab' will produce identical results
+    """
+    
+    if s == '':
+        return s
+    
+    do_strip = False
+    for i, c in enumerate(s[::-1]):
+        if c in forbidden:
+            do_strip = True
+            strip_spot = i
+        elif do_strip and c not in neutral:
+            break
+        
+    if not do_strip:
+        return s
+    return s[:(-(strip_spot+1+extra_strip))]
+        
+    
+
+"""
+General procedure for string processing:
+    
+Strip leader (which is usually the scan ID or the pt's name)
+Strip version number (2 or 3 number at the end of the tring cut by _)
+
+"""
+
+all_subfolders = [x[0] for x in os.walk(filefolder)]
+meaningful = []
 for ext in file_types:
+    """
     glob_path = os.path.join(filefolder, '**', f'*.{ext}')
     full_files = glob.glob(glob_path, recursive=True)
     files = [get_terminal(f)[:(-len(ext)-1)] for f in full_files] # strip preceding path and extension
@@ -49,5 +107,32 @@ for ext in file_types:
     ordered_freqs = {key: val for key, val in frequencies.most_common()}
     
     out = pd.Series(ordered_freqs)
-    out_name = os.path.join(out_folder, f'{ext.replace(".","-")}.csv')
+    out_name = os.path.join(out_folder, f'keywords_{ext.replace(".","-")}.csv')
+    #out.to_csv(out_name)
+    """
+    for sf in all_subfolders:
+        #print(f'ext:{ext}, sf:{sf}')
+        glob_path = os.path.join(sf, f'*.{ext}')
+        full_files = glob.glob(glob_path, recursive=False)
+        files = [get_terminal(f)[:(-len(ext)-1)] for f in full_files] # strip preceding path and extension
+        files = [f for f in files if 'temp' not in f]
+        
+        common = find_stem(files)
+        files_no_common = [f.strip(common) for f in files]
+        
+        forbidden = '0123456789'
+        neutral = '_'
+        files_no_common_no_trailing = [cut_trailing(f, forbidden, neutral, extra_strip=1)
+                                       if len(f) > 0 and f[-1] in forbidden
+                                       else f
+                                       for f in files_no_common]
+        meaningful.extend(files_no_common_no_trailing)
+        
+    frequencies = Counter(meaningful)
+    ordered_freqs = {key: val for key, val in frequencies.most_common()}
+    
+    out = pd.Series(ordered_freqs)
+    out_name = os.path.join(out_folder, f'keywords_{ext.replace(".","-")}.csv')
     out.to_csv(out_name)
+    
+    

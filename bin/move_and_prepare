@@ -35,7 +35,8 @@ import pandas as pd
 ##### the following variables generally just need to be set once
 
 # column names in the csv that contain pt IDs of interest
-pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
+#pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
+pt_id_cols = ['mr1_mr_id', 'mr2_mr_id', 'mr3_mr_id']
 
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
 path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
@@ -43,12 +44,12 @@ path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
 # relates a unique sequence in a filename that can be used to identify a file
 # as a certain type of image to the basename for the ouput, whether and what to
 # register them to, and whether to skullstrip them
-signature_relationships = {'FLAIR_cor':
+signature_relationships = {('FLAIR_cor', 'T2W_FLAIR_CORONAL'):
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no'},
-                          'FLAIR_AX':
-                              {'basename': 'axFLAIR', 'register': 'yes', 'skullstrip': 'yes'},
-                          '3DT1': 
-                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes'},
+                          ('FLAIR_AX', 'T2W_FLAIR'):
+                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes'},
+                          ('3DT1',): 
+                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes'},
                           }
     
 # list of dicts giving parameters for FAST
@@ -188,8 +189,11 @@ for pt in pt_ids:
         sig_tracker = {} # to store filepaths to files
         for signature, subdict in signature_relationships.items():
             
-            candidate_pars = glob.glob(os.path.join(acquired_folder, f'*{signature}*.PAR'))
-            candidate_recs = glob.glob(os.path.join(acquired_folder, f'*{signature}*.REC'))
+            candidate_pars = []
+            candidate_recs = []
+            for subsig in signature:
+                candidate_pars.extend(glob.glob(os.path.join(acquired_folder, f'*{subsig}*.PAR')))
+                candidate_recs.extend(glob.glob(os.path.join(acquired_folder, f'*{subsig}*.REC')))
             
             n_cand_files = (len(candidate_pars), len(candidate_recs))
             pt_status[pt][signature] = n_cand_files
@@ -268,7 +272,7 @@ for pt in pt_ids:
         successful += 1
         
         
-        # fun FAST. note that the loop will be skipped if the fast_params list is empty, but the folder will still be created
+        # run FAST
         fast_folder = os.path.join(master_output_folder, 'fast')
         
         if fast_params: # if fast_params is not empty
@@ -283,6 +287,7 @@ for pt in pt_ids:
                 
             print(f'Construction:\n{construction}')
             os.system(construction)
+
 
 # write status log
             

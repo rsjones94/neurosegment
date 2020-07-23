@@ -37,7 +37,7 @@ scan_relationships = {
     
 def find_stem(arr):
     """
-    Shamelessly stolen from geeksforgeeks. Finds the longest common substring
+    Finds the longest common substring
     in an array of strings
 
     Parameters
