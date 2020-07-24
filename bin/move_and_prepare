@@ -44,12 +44,14 @@ path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
 # relates a unique sequence in a filename that can be used to identify a file
 # as a certain type of image to the basename for the ouput, whether and what to
 # register them to, and whether to skullstrip them
-signature_relationships = {('FLAIR_cor', 'T2W_FLAIR_CORONAL'):
-                              {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no'},
+# signatures work such that if the key is found in the filename and the excl
+# strings are NOT found in the filename, then that file is IDd as that signature
+signature_relationships = {('FLAIR_cor','FLAIR_COR'):
+                              {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no', 'excl':['AX','ax','axial','AXIAL']},
                           ('FLAIR_AX', 'T2W_FLAIR'):
-                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes'},
-                          ('3DT1',): 
-                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes'},
+                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes', 'excl':['cor','COR','coronal','CORONAL']},
+                          ('3DT1', 'T1W_3D'): 
+                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes', 'excl':['FLAIR']},
                           }
     
 # list of dicts giving parameters for FAST
@@ -66,6 +68,26 @@ fast_params = []
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
 #####
+
+def any_in_str(s, l):
+    """
+    Returns whether any of a list of substrings is in a string
+    
+
+    Parameters
+    ----------
+    s : str
+        string to look for substrings in.
+    l : list of str
+        substrings to check for in s.
+
+    Returns
+    -------
+    bool
+
+    """
+    
+    return any([substr in s for substr in l])
 
 start = time()
 
@@ -191,25 +213,33 @@ for pt in pt_ids:
             
             candidate_pars = []
             candidate_recs = []
+            # note that the signature matching includes the full path. probably not a great idea
             for subsig in signature:
-                candidate_pars.extend(glob.glob(os.path.join(acquired_folder, f'*{subsig}*.PAR')))
-                candidate_recs.extend(glob.glob(os.path.join(acquired_folder, f'*{subsig}*.REC')))
+                
+                potential_pars = glob.glob(os.path.join(acquired_folder, f'*{subsig}*.PAR'))
+                potential_recs = glob.glob(os.path.join(acquired_folder, f'*{subsig}*.REC'))
+                
+                potential_pars = [f for f in potential_pars if not any_in_str(f, subdict['excl'])]
+                potential_recs = [f for f in potential_recs if not any_in_str(f, subdict['excl'])]
+                
+                candidate_pars.extend(potential_pars)
+                candidate_recs.extend(potential_recs)
             
             n_cand_files = (len(candidate_pars), len(candidate_recs))
             pt_status[pt][signature] = n_cand_files
             if all([i >= 1 for i in n_cand_files]):
                 
-                sig_tracker[signature] = {'original_par': candidate_pars[0]}
-                sig_tracker[signature]['original_rec'] = candidate_recs[0]
+                sig_tracker[signature] = {'original_par': candidate_pars[-1]}
+                sig_tracker[signature]['original_rec'] = candidate_recs[-1]
                 
-                moved_par = os.path.join(bin_folder, get_terminal(candidate_pars[0]))
-                moved_rec = os.path.join(bin_folder, get_terminal(candidate_recs[0]))
+                moved_par = os.path.join(bin_folder, get_terminal(candidate_pars[-1]))
+                moved_rec = os.path.join(bin_folder, get_terminal(candidate_recs[-1]))
                 
                 sig_tracker[signature]['moved_par'] = moved_par
                 sig_tracker[signature]['moved_rec'] = moved_rec
                 
                 if any(i != 1 for i in n_cand_files):
-                    print(f'warning: pt {pt} returned {n_cand_files} for {signature}. using 1st option')
+                    print(f'warning: pt {pt} returned {n_cand_files} for {signature}. using last option')
             else:
                 print(f'pt {pt} has {n_cand_files} candidate par/recs for {signature}. will be skipped')
                 has_required_files = False
