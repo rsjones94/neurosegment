@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utraining_folder-8 -*-
 """
-Generates and validates with repeated leave-one-out validation
+Generates BIANCA models and validates with repeated leave-one-out validation
 """
 import os
 import time
