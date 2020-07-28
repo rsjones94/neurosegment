@@ -44,25 +44,24 @@ def generate_master(top_folder, master_name, training_subfolder,
     
     message_file = open(master_name, 'w')
 
-    
-    n_files = None
+    i = 0
     for index, row in df.iterrows():
         
         pt_id = row[pt_id_col]
         target = os.path.join(top_folder, pt_id, training_subfolder)
-        files = [os.path.join(target,f) for f in os.listdir(target) if os.path.isfile(os.path.join(target, f))]
-        files = sorted(files)
-        if len(files) != n_files and n_files != None:
-            raise Exception(f'Number of files does not match. Expected {n_files} but got {len(files)} in {target}')
-        n_files = len(files)
+        files = [os.path.join(target,f) for f in training_names]
+        if not all([os.path.exists(f) for f in files]):
+            raise Exception(f'Folder {target} does not contain all specified files')
         for f in files:
             message_file.write(f'{f} ')
-        message_file.write('\n')
+        if i != len(df)-1:
+            message_file.write('\n')
+        i += 1
         
     message_file.close()
 
 
-def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, out_name):
+def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, out_name, run_cmd=True):
     """
     Constructs a string that can be passed to the OS to execute BIANCA
     
@@ -86,7 +85,36 @@ def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, o
 
     """
     
-    bianca = f'fsl bianca --singlefile={master_name} --querysubjectnum={subject_index} --brainmaskfeaturenum={skullstrip_col} --labelfeaturenum={mask_col} -o {out_name}'
-
+    bianca = f'bianca --singlefile={master_name} --querysubjectnum={subject_index} --trainingnums=all --brainmaskfeaturenum={skullstrip_col} --labelfeaturenum={mask_col} --saveclassifierdata={out_name}_classifer -o {out_name}'
+    if run_cmd:
+        os.system(bianca)
     return bianca
     
+def evaluate_bianca_performance(bianca_mask, thresh, manual_mask, run_cmd=True):
+    """
+    Evaluates the quality of a BIANCA lesion segmentation
+    
+
+    Parameters
+    ----------
+    bianca_mask : str
+        the name of the of fuzzy BIANCA lesion mask to be evaluated.
+    thresh : float
+        DESCRIPTION.
+    manual_mask : str
+        name of the manual binary lesion mask.
+    run_cmd : bool
+        if True, execute the generated command.
+
+    Returns
+    -------
+    evaluation_cmd : TYPE
+        DESCRIPTION.
+
+    """
+    
+    evaluation_cmd = f'bianca_overlap_measures {bianca_mask} {thresh} {manual_mask} 1'
+    # bianca_overlap_measures <lesionmask> <threshold> <manualmask> <saveoutput>
+    if run_cmd:
+        os.system(evaluation_cmd)
+    return evaluation_cmd
