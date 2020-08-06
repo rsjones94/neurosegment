@@ -11,19 +11,19 @@ import pandas as pd
 import bianca_helpers as bh
 
 training_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/'
-master_file_path = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/master.txt'
+master_file_path = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation_master.txt'
 training_subfolder = 'processed'
 training_stems = ['axFLAIR.nii.gz', 'axT1.nii.gz', 'axFLAIR_mask.nii.gz']
 input_csv = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/move_and_prepare_tabular_24-07-20-09_53.csv'
 training_boolean_column_header = 'training'
 pt_id_col_header = 'id'
 
-brainmask_col = 1
-trainingmask_col = 3
+brainmask_col = 1 # in training_stems, which (non zero indexed) index contains the scan that has the best brainmasks?
+trainingmask_col = 3 # which index has the manual lesion mask
 
-thresh = 0.5
+thresh = 0.7
 
-validation_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/validation/'
+validation_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation/' # should not exist
 ####
 
 

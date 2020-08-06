@@ -42,6 +42,8 @@ def generate_master(top_folder, master_name, training_subfolder,
     df = pd.read_csv(in_csv)
     df = df[df[incl_col] == 1]
     
+    assert len(df) != 0
+    
     message_file = open(master_name, 'w')
 
     i = 0
