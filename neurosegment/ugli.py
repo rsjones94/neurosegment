@@ -5,45 +5,66 @@ UGLI (User-guided lesion identification) is a set of command-line tools and
 related GUI that helps generates lesion masks from pre-trained BIANCA models
 """
 
-import tkinter
 
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-# Implement the default Matplotlib key bindings.
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.figure import Figure
-
-import numpy as np
+from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT, Button, END
+from tkinter.ttk import Frame, Label, Entry
+from tkinter.filedialog import askopenfilename
 
 
-root = tkinter.Tk()
-root.wm_title("Embedding in Tk")
+class Example(Frame):
 
-fig = Figure(figsize=(5, 4), dpi=100)
-t = np.arange(0, 3, .01)
-fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
+    def __init__(self):
+        super().__init__()
 
-canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-canvas.draw()
-
-toolbar = NavigationToolbar2Tk(canvas, root)
-toolbar.update()
+        self.initUI()
 
 
-def on_key_press(event):
-    print("you pressed {}".format(event.key))
-    key_press_handler(event, canvas, toolbar)
+    def initUI(self):
+
+        self.master.title("UGLI: user-guided lesion identification")
+        self.pack(fill=BOTH, expand=True)
+
+        frame1 = Frame(self)
+        frame1.pack(fill=X)
+
+        lbl1 = Button(frame1, text="BIANCA labels", width=10, command=self.set_entry_path)
+        lbl1.pack(side=LEFT, padx=5, pady=5)
+
+        self.bianca_entry = Entry(frame1)
+        self.bianca_entry.pack(fill=X, padx=5, expand=True)
+
+        frame2 = Frame(self)
+        frame2.pack(fill=X)
+
+        lbl2 = Button(frame2, text="Master folder", width=10)
+        lbl2.pack(side=LEFT, padx=5, pady=5)
+
+        entry2 = Entry(frame2)
+        entry2.pack(fill=X, padx=5, expand=True)
+
+        frame3 = Frame(self)
+        frame3.pack(fill=BOTH, expand=True)
+
+        lbl3 = Label(frame3, text="Display", width=10)
+        lbl3.pack(side=LEFT, anchor=N, padx=5, pady=5)
+
+        txt = Text(frame3)
+        txt.pack(fill=BOTH, pady=5, padx=5, expand=True)
+        
+    
+    def set_entry_path(self):
+        filename = askopenfilename()
+        self.bianca_entry.delete(0,END)
+        self.bianca_entry.insert(0,filename)
+        
+
+def main():
+
+    root = Tk()
+    root.geometry("300x300+300+300")
+    app = Example()
+    root.mainloop()
 
 
-canvas.mpl_connect("key_press_event", on_key_press)
-
-button = tkinter.Button(master=root, text="Quit", command=root.quit)
-
-# Packing order is important. Widgets are processed sequentially and if there
-# is no space left, because the window is too small, they are not displayed.
-# The canvas is rather flexible in its size, so we pack it last which makes
-# sure the UI controls are displayed as long as possible.
-button.pack(side=tkinter.BOTTOM)
-canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-
-tkinter.mainloop()
+if __name__ == '__main__':
+    main()
