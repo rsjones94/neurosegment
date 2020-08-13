@@ -15,6 +15,12 @@ from tkinter.filedialog import askopenfilename, askdirectory
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+# Implement the default Matplotlib key bindings.
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
+
 import numpy as np
 import pandas as pd
 
@@ -34,6 +40,8 @@ class MainApp(Frame):
         self.master.title("UGLI: user-guided lesion identification")
         self.pack(fill=tk.BOTH, expand=True)
 
+
+
         frame1 = Frame(self)
         frame1.pack(fill=tk.X)
 
@@ -44,14 +52,32 @@ class MainApp(Frame):
         self.bianca_entry.pack(fill=tk.X, padx=5, expand=True)
         self.bianca_entry.insert(0,self.find_default_model())
 
+
+
         frame2 = Frame(self)
         frame2.pack(fill=tk.X)
 
-        masterfile_button = tk.Button(frame2, text="Master folder", width=10, command=lambda: self.ask_for_dir(self.masterfile_entry))
-        masterfile_button.pack(side=tk.LEFT, padx=5, pady=5)
+        t1_button = tk.Button(frame2, text="T1 scan", width=10, command=lambda: self.ask_for_file(self.t1_entry))
+        t1_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.masterfile_entry = tk.Entry(frame2)
-        self.masterfile_entry.pack(side=tk.RIGHT, fill=tk.X, padx=5, expand=True)
+        self.t1_entry = tk.Entry(frame2)
+        self.t1_entry.pack(side=tk.LEFT, fill=tk.X, padx=5, expand=True)
+        
+        flair_button = tk.Button(frame2, text="FLAIR scan", width=10, command=lambda: self.ask_for_file(self.flair_entry))
+        flair_button.pack(side=tk.RIGHT, padx=5, pady=5)
+
+        self.flair_entry = tk.Entry(frame2)
+        self.flair_entry.pack(side=tk.RIGHT, fill=tk.X, padx=5, expand=True)
+        
+        
+        
+        frame2p125 = Frame(self)
+        frame2p125.pack(fill=tk.X)
+
+        run_bianca_button = tk.Button(frame2p125, text="RUN BIANCA", width=40, command=self.run_bianca)
+        run_bianca_button.pack(side=None, padx=5, pady=5)
+        
+        
         
         frame2p25 = Frame(self)
         frame2p25.pack(fill=tk.X)
@@ -71,36 +97,36 @@ class MainApp(Frame):
         self.alpha_entry.pack(fill=tk.X, padx=5, expand=False, side=tk.LEFT)
         self.alpha_entry.insert(0,50)
         
+        
+        
         frame2p5 = Frame(self)
         frame2p5.pack(fill=tk.X)
         
-        binarize_probability_mask_button = tk.Button(frame2p5, text="Binarize mask", width=10, command=lambda: self.plot_graph(frame3, ax, self.binarize_slider.get()))
+        binarize_probability_mask_button = tk.Button(frame2p5, text="Binarize mask", width=10, command=None)
         binarize_probability_mask_button.pack(padx=2, pady=2, side=tk.LEFT, anchor=tk.S)
         
         self.binarize_slider = tk.Scale(frame2p5, from_=0, to=100, orient=tk.HORIZONTAL)
         self.binarize_slider.pack(fill=tk.X, padx=2, pady=2, expand=True)
 
+
+
         frame3 = Frame(self)
         frame3.pack(fill=tk.BOTH, expand=True)
-
-        #txt = Text(frame3)
-        #txt.pack(side=LEFT, fill=BOTH, pady=2, padx=2, expand=True)
         
-        figure = plt.Figure(figsize=(6,5), dpi=100)
-        ax = figure.add_subplot(111)
+        ### PLOT STUFF
         
-        chart_type = FigureCanvasTkAgg(figure, frame3)
-        chart_type.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        txt = tk.Text(frame3)
+        txt.pack(side=tk.LEFT, fill=tk.BOTH, pady=2, padx=2, expand=True)
         
-        self.plot_graph(frame3, ax)
-        
-        # do plt stuff
+        # PLOT STUFF
         
         slice_label = Label(frame3, text="Slice", width=1, wraplength=1)
         slice_label.pack(side=tk.RIGHT, padx=2, pady=2, anchor=tk.CENTER)
         
         self.slice_slider = tk.Scale(frame3, from_=10, to=0, orient=tk.VERTICAL)
         self.slice_slider.pack(side=tk.RIGHT, fill=tk.BOTH, padx=2, pady=2, expand=False)
+        
+        
         
         frame4 = Frame(self)
         frame4.pack(fill=tk.BOTH, expand=False)
@@ -134,21 +160,45 @@ class MainApp(Frame):
     def set_mask_alpha(self, n):
         print(n)
         return n
-    
-    
-    def plot_graph(self, frame, ax, pert=1):
-        print(pert)
-        ax.clear()
-        ex = np.array([0,2,5,8])
-        why = np.array([10,6,8,3]) * ((np.random.rand(4)-0.5)*0.01*pert)
-        ax.plot(ex,why)
-        ax.set_title('Wowee')
         
         
-    def just_print(self):
-        print('ey')
+    def set_output_folder(self):
+        where_t1 = self.t1_entry.get()
+        parent = os.path.dirname(where_t1)
+        out = os.path.join(parent, 'ugli')
+        
+        if os.path.exists(out):
+            m = f'When you hit the RUN BIANCA button, UGLI generates a subfolder called "ugli" in the same directory as the specified T1 scan\n\nUGLI has detected that {out} already exists. Please remove or rename this folder'
+            self.popupmsg(m)
+            raise Exception(f'Folder {out} already exists. Please delete or rename folder')
+        else:
+            os.mkdir(out)
+            self.output_folder = out
+            
+    def run_bianca(self):
+        
+        if '' in [self.t1_entry.get(), self.flair_entry.get()]:
+            m = f'Please specify both T1 and FLAIR inputs'
+            self.popupmsg(m)
+            raise Exception(f'Insufficient imaging input')
+        
+        self.set_output_folder()
+        bianca_master_file = ugh.generate_bianca_master(self.output_folder, self.flair_entry.get(), self.t1_entry.get())
+        
+        self.probability_map = os.path.join(self.output_folder, 'probability_map.nii.gz')
+        self.probability_map = ugh.execute_bianca(master=bianca_master_file, model=self.bianca_entry.get(), outname=self.probability_map)
+        
+        self.popupmsg('BIANCA successfully executed')
 
-
+    
+    def popupmsg(self, msg, title='!!! ATTENTION !!!'):
+        popup = tk.Tk()
+        popup.wm_title(title)
+        label = tk.Label(popup, text=msg)
+        label.pack(side="top", fill="x", pady=10, padx=10)
+        B1 = tk.Button(popup, text="Got it", command = popup.destroy)
+        B1.pack()
+        popup.mainloop()
         
 
 def main():
