@@ -9,6 +9,33 @@ Created on Wed Aug 12 14:10:56 2020
 import os
 import glob
 
+import nibabel as nib
+import numpy as np
+from scipy import ndimage
+
+def read_nifti_radiological(img_path):
+    """
+    Wrapper for nibabel to read in NIfTI scans.
+    
+
+    Parameters
+    ----------
+    img_path : string
+        The path to the .nii scan
+            
+    Returns
+    -------
+    A numpy array representing the scan
+
+    """
+    img = nib.load(img_path).get_fdata()
+    img = np.rot90(img, k=1)
+    #img = ndimage.rotate(img.T, 180)
+    img = np.fliplr(img)
+    
+    return img
+    
+
 
 def generate_bianca_master(parent_folder, flair, t1):
     # returns the name out the output master file
