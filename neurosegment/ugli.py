@@ -24,6 +24,7 @@ import matplotlib
 
 import numpy as np
 import pandas as pd
+import scipy.ndimage.morphology as mor
 
 import ugli_helpers as ugh
 
@@ -159,28 +160,76 @@ class MainApp(Frame):
         frame5 = Frame(self)
         frame5.pack(fill=tk.BOTH, expand=False)
         
-        self.erode_button = tk.Button(frame5, text="ERODE", width=10, command=None)
-        self.erode_button.pack(padx=2, pady=2, side=tk.LEFT)
+        global_ops_label = Label(frame5, text="Global morphological operations", width=25)
+        global_ops_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NW)
         
-        self.dilate_button = tk.Button(frame5, text="DILATE", width=10, command=None)
-        self.dilate_button.pack(padx=2, pady=2, side=tk.LEFT)
+        #finishing_label = Label(frame5, text="Final operations", width=25)
+        #finishing_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NE)
         
-        self.open_button = tk.Button(frame5, text="OPEN", width=10, command=None)
-        self.open_button.pack(padx=2, pady=2, side=tk.LEFT)
+        self.erode_button = tk.Button(frame5, text="ERODE", width=8, command=lambda: self.alter_all_slices(mor.binary_erosion))
+        self.erode_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.close_button = tk.Button(frame5, text="CLOSE", width=10, command=None)
-        self.close_button.pack(padx=2, pady=2, side=tk.LEFT)
+        self.dilate_button = tk.Button(frame5, text="DILATE", width=8, command=lambda: self.alter_all_slices(mor.binary_dilation))
+        self.dilate_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.open_button = tk.Button(frame5, text="OPEN", width=8, command=lambda: self.alter_all_slices(mor.binary_opening))
+        self.open_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.close_button = tk.Button(frame5, text="CLOSE", width=8, command=lambda: self.alter_all_slices(mor.binary_closing))
+        self.close_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.zero_button = tk.Button(frame5, text="ZERO", width=8, command=lambda: self.alter_all_slices(self.set_slice_zero))
+        self.zero_button.pack(padx=2, pady=1, side=tk.LEFT)
+
+        top_buffer = tk.Label(frame5, text="|", width=10)
+        top_buffer.pack(padx=2, pady=0, side=tk.LEFT)        
+        
+        self.slice_up_button = tk.Button(frame5, text="Slice up", width=12, command=self.slice_up)
+        self.slice_up_button.pack(padx=6, pady=1, side=tk.LEFT)
+
+        self.save_mask_button = tk.Button(frame5, text="Save mask", width=12, command=None)
+        self.save_mask_button.pack(padx=6, pady=1, side=tk.RIGHT)
+        
+        self.calculate_stats_button = tk.Button(frame5, text="Write statistics", width=12, command=None)
+        self.calculate_stats_button.pack(padx=6, pady=1, side=tk.RIGHT)
         
 
         
-        self.save_mask_button = tk.Button(frame5, text="Save mask", width=12, command=None)
-        self.save_mask_button.pack(padx=6, pady=2, side=tk.RIGHT)
         
-        self.calculate_stats_button = tk.Button(frame5, text="Write statistics", width=12, command=None)
-        self.calculate_stats_button.pack(padx=6, pady=2, side=tk.RIGHT)
+        frame6= Frame(self)
+        frame6.pack(fill=tk.BOTH, expand=False)
         
-        self.return_to_binarization_button = tk.Button(frame5, text="Return to binarization", width=20, command=self.return_to_binarization_cmd)
-        self.return_to_binarization_button.pack(padx=6, pady=2, side=tk.RIGHT)
+        local_ops_label = tk.Label(frame6, text="Local morphological operations         ", width=25)
+        local_ops_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NW)
+        
+        self.local_erode_button = tk.Button(frame6, text="ERODE", width=8, command=lambda: self.alter_current_slice(mor.binary_erosion))
+        self.local_erode_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.local_dilate_button = tk.Button(frame6, text="DILATE", width=8, command=lambda: self.alter_current_slice(mor.binary_dilation))
+        self.local_dilate_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.local_open_button = tk.Button(frame6, text="OPEN", width=8, command=lambda: self.alter_current_slice(mor.binary_opening))
+        self.local_open_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.local_close_button = tk.Button(frame6, text="CLOSE", width=8, command=lambda: self.alter_current_slice(mor.binary_closing))
+        self.local_close_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.local_zero_button = tk.Button(frame6, text="ZERO", width=8, command=lambda: self.alter_current_slice(self.set_slice_zero))
+        self.local_zero_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        bottom_buffer = tk.Label(frame6, text="|", width=10)
+        bottom_buffer.pack(padx=2, pady=0, side=tk.LEFT)
+        
+        self.slice_down_button = tk.Button(frame6, text="Slice down", width=12, command=self.slice_down)
+        self.slice_down_button.pack(padx=6, pady=1, side=tk.LEFT)
+        
+        self.return_to_binarization_button = tk.Button(frame6, text="Back to binarization", width=12, command=self.return_to_binarization_cmd)
+        self.return_to_binarization_button.pack(padx=6, pady=1, side=tk.RIGHT)
+        
+        self.undo_morph_button = tk.Button(frame6, text="Undo", width=12, command=self.undo_morph)
+        self.undo_morph_button.pack(padx=6, pady=1, side=tk.RIGHT)
+
+
         
         
         # set up the overlay cmap
@@ -197,13 +246,15 @@ class MainApp(Frame):
         blue = np.array([0/255, 0/255, 255/255, 1])
         navy = np.array([0/255, 0/255, 128/255, 1])
         
+        green = np.array([0/255, 255/255, 0/255, 1])
+        
         newcolors1[:128, :] = clear_blue
         newcolors1[128:, :] = red
         
         self.probability_cmp = matplotlib.colors.ListedColormap(newcolors1)
         
         newcolors2[:128, :] = clear_navy
-        newcolors2[128:, :] = blue
+        newcolors2[128:, :] = green
         
         self.binary_cmp = matplotlib.colors.ListedColormap(newcolors2)
         
@@ -241,14 +292,25 @@ class MainApp(Frame):
             self.binarize_probability_mask_button['state'] = tk.DISABLED
             self.binarize_slider['state'] = tk.DISABLED
             self.slice_slider['state'] = tk.DISABLED
+            self.slice_up_button['state'] = tk.DISABLED
+            self.slice_down_button['state'] = tk.DISABLED
             
             self.erode_button['state'] = tk.DISABLED
             self.dilate_button['state'] = tk.DISABLED
             self.open_button['state'] = tk.DISABLED
             self.close_button['state'] = tk.DISABLED
+            self.zero_button['state'] = tk.DISABLED
+            
+            self.local_erode_button['state'] = tk.DISABLED
+            self.local_dilate_button['state'] = tk.DISABLED
+            self.local_open_button['state'] = tk.DISABLED
+            self.local_close_button['state'] = tk.DISABLED
+            self.local_zero_button['state'] = tk.DISABLED
+            
             self.save_mask_button['state'] = tk.DISABLED
             self.calculate_stats_button['state'] = tk.DISABLED
             self.return_to_binarization_button['state'] = tk.DISABLED
+            self.undo_morph_button['state'] = tk.DISABLED
             
         elif stage == 2:
             self.display_label.config(text='Step 2: probability map binarization')
@@ -270,14 +332,25 @@ class MainApp(Frame):
             self.binarize_probability_mask_button['state'] = tk.NORMAL
             self.binarize_slider['state'] = tk.NORMAL
             self.slice_slider['state'] = tk.NORMAL
+            self.slice_up_button['state'] = tk.NORMAL
+            self.slice_down_button['state'] = tk.NORMAL
             
             self.erode_button['state'] = tk.DISABLED
             self.dilate_button['state'] = tk.DISABLED
             self.open_button['state'] = tk.DISABLED
             self.close_button['state'] = tk.DISABLED
+            self.zero_button['state'] = tk.DISABLED
+            
+            self.local_erode_button['state'] = tk.DISABLED
+            self.local_dilate_button['state'] = tk.DISABLED
+            self.local_open_button['state'] = tk.DISABLED
+            self.local_close_button['state'] = tk.DISABLED
+            self.local_zero_button['state'] = tk.DISABLED
+            
             self.save_mask_button['state'] = tk.DISABLED
             self.calculate_stats_button['state'] = tk.DISABLED
             self.return_to_binarization_button['state'] = tk.DISABLED
+            self.undo_morph_button['state'] = tk.DISABLED
             
         elif stage == 3:
             self.display_label.config(text='Step 3: binary map adjustment')
@@ -299,14 +372,41 @@ class MainApp(Frame):
             self.binarize_probability_mask_button['state'] = tk.DISABLED
             self.binarize_slider['state'] = tk.DISABLED
             self.slice_slider['state'] = tk.NORMAL
+            self.slice_up_button['state'] = tk.NORMAL
+            self.slice_down_button['state'] = tk.NORMAL
             
             self.erode_button['state'] = tk.NORMAL
             self.dilate_button['state'] = tk.NORMAL
             self.open_button['state'] = tk.NORMAL
             self.close_button['state'] = tk.NORMAL
+            self.zero_button['state'] = tk.NORMAL
+            
+            self.local_erode_button['state'] = tk.NORMAL
+            self.local_dilate_button['state'] = tk.NORMAL
+            self.local_open_button['state'] = tk.NORMAL
+            self.local_close_button['state'] = tk.NORMAL
+            self.local_zero_button['state'] = tk.NORMAL
+            
             self.save_mask_button['state'] = tk.NORMAL
             self.calculate_stats_button['state'] = tk.NORMAL
             self.return_to_binarization_button['state'] = tk.NORMAL
+            self.undo_morph_button['state'] = tk.NORMAL
+            
+            
+    def slice_up(self):
+        
+        current = self.slice_slider.get()
+        to = current+1
+        
+        self.slice_slider.set(to)
+        
+        
+    def slice_down(self):
+        
+        current = self.slice_slider.get()
+        to = current-1
+        
+        self.slice_slider.set(to)
 
     
     def ask_for_file(self, entry):
@@ -335,6 +435,7 @@ class MainApp(Frame):
         
         if os.path.exists(out):
             m = f'When you hit the RUN BIANCA button, UGLI generates a subfolder called "ugli" in the same directory as the specified T1 scan\n\nUGLI has detected that {out} already exists. Please remove or rename this folder'
+            #self.setup_stage(1)
             self.popupmsg(m)
             raise Exception(f'Folder {out} already exists. Please delete or rename folder')
         else:
@@ -357,6 +458,7 @@ class MainApp(Frame):
         
         self.binarize_slider.set(50)
         
+        self.alpha_entry.delete(0, 'end')
         self.alpha_entry.insert(0,0.5)
         
         self.probability_map_file = os.path.join(self.output_folder, 'probability_map.nii.gz')
@@ -368,8 +470,11 @@ class MainApp(Frame):
         
         self.radio_flair.select()
         
-        self.slice_slider.configure(from_=self.flair.shape[2])
+        self.slice_slider.configure(from_=self.flair.shape[2]-1)
         self.slice_slider.set(int(self.flair.shape[2]/2)-1)
+        
+        self.flair_max.delete(0, 'end')
+        self.t1_max.delete(0, 'end')
         
         self.flair_max.insert(0, round(self.flair.max()))
         self.t1_max.insert(0, round(self.t1.max()))
@@ -454,7 +559,6 @@ class MainApp(Frame):
         cmap = self.overlay_cmap
         #print('Overlay called')
         
-        mi = self.binarize_slider.get()/100
         al = self.get_effective_alpha()
 
         scan = self.current_overlay
@@ -474,6 +578,82 @@ class MainApp(Frame):
             self.overlaydisplay.set_alpha(al)
         except AttributeError:
             self.overlaydisplay = self.plot1.imshow(ax_slice, cmap=cmap, vmin=0, vmax=1, alpha=al)
+          
+            
+    def take_snapshot(self):
+        self.snapshot = self.current_overlay.copy()
+        
+            
+    def set_slice_zero(self, sli):
+        a = sli.copy()
+        a[:] = 0
+        return a
+            
+    
+    def binary_operation(self, operation, im2d):
+        """
+        Applies a binary operation to a 2d image
+        
+
+        Parameters
+        ----------
+        operation : function
+            binary operation.
+        im2d : 2d np array
+            array to apply operation to.
+
+        Returns
+        -------
+        np array
+
+        """
+        
+        a = operation(im2d)
+        return a
+    
+    
+    def binary_operation_all(self, operation, mat):
+        """
+        Applies a binary operation to every z slice of a 3d image
+        
+
+        Parameters
+        ----------
+        operation : function
+            binary operation.
+        mat : 3d np array
+            array to apply operation to.
+
+        Returns
+        -------
+        np array.
+
+        """
+        
+        n_slices = mat.shape[2]
+        a = mat[:]
+        for i in range(n_slices):
+            a[:,:,i] = self.binary_operation(operation, a[:,:,i])
+            
+        return a
+    
+    def undo_morph(self):
+        self.current_overlay = self.snapshot.copy()
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get())
+    
+    def alter_current_slice(self, operation):
+        self.take_snapshot()
+        
+        i = self.slice_slider.get()
+        self.current_overlay[:,:,i] = self.binary_operation(operation, self.current_overlay[:,:,i])
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get())
+        
+        
+    def alter_all_slices(self, operation):
+        self.take_snapshot()
+        
+        self.current_overlay = self.binary_operation_all(operation, self.current_overlay)
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get())
 
     
     def popupmsg(self, msg, title='!!! ATTENTION !!!'):
@@ -489,7 +669,7 @@ class MainApp(Frame):
 def main():
 
     root = Tk()
-    root.geometry("1200x900+400+200")
+    root.geometry("1200x1000+400+200")
     app = MainApp(root)
     root.mainloop()
 
