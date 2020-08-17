@@ -98,19 +98,19 @@ class MainApp(Frame):
         self.mask_on_checkbox = tk.Checkbutton(frame2p25, text="Mask on", variable=self.mask_on, command=lambda: self.display_scan(self.bg_scan.get(), self.slice_slider.get()))
         self.mask_on_checkbox.pack(anchor=tk.W, padx=4, pady=3, side=tk.LEFT)
         
-        alpha_label = tk.Label(frame2p25, text="Mask alpha", width=8, command=None)
+        alpha_label = tk.Label(frame2p25, text="Mask alpha", width=10, command=None)
         alpha_label.pack(side=tk.LEFT, padx=1, pady=3)
         
         self.alpha_entry = Entry(frame2p25)
         self.alpha_entry.pack(fill=tk.X, padx=4, expand=False, side=tk.LEFT)
         
-        t1_max_label = tk.Label(frame2p25, text="T1 max", width=8)
+        t1_max_label = tk.Label(frame2p25, text="T1 max", width=10)
         t1_max_label.pack(side=tk.LEFT, padx=1, pady=3)
         
         self.t1_max = Entry(frame2p25)
         self.t1_max.pack(fill=tk.X, padx=4, expand=False, side=tk.LEFT)
         
-        flair_max_label = tk.Label(frame2p25, text="FLAIR max", width=8)
+        flair_max_label = tk.Label(frame2p25, text="FLAIR max", width=10)
         flair_max_label.pack(side=tk.LEFT, padx=1, pady=3)
         
         self.flair_max = Entry(frame2p25)
@@ -167,22 +167,22 @@ class MainApp(Frame):
         #finishing_label = Label(frame5, text="Final operations", width=25)
         #finishing_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NE)
         
-        self.erode_button = tk.Button(frame5, text="ERODE", width=8, command=lambda: self.alter_all_slices(mor.binary_erosion))
+        self.erode_button = tk.Button(frame5, text="ERODE", width=10, command=lambda: self.alter_all_slices(mor.binary_erosion))
         self.erode_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.dilate_button = tk.Button(frame5, text="DILATE", width=8, command=lambda: self.alter_all_slices(mor.binary_dilation))
+        self.dilate_button = tk.Button(frame5, text="DILATE", width=10, command=lambda: self.alter_all_slices(mor.binary_dilation))
         self.dilate_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.open_button = tk.Button(frame5, text="OPEN", width=8, command=lambda: self.alter_all_slices(mor.binary_opening))
+        self.open_button = tk.Button(frame5, text="OPEN", width=10, command=lambda: self.alter_all_slices(mor.binary_opening))
         self.open_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.close_button = tk.Button(frame5, text="CLOSE", width=8, command=lambda: self.alter_all_slices(mor.binary_closing))
+        self.close_button = tk.Button(frame5, text="CLOSE", width=10, command=lambda: self.alter_all_slices(mor.binary_closing))
         self.close_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.zero_button = tk.Button(frame5, text="ZERO", width=8, command=lambda: self.alter_all_slices(self.set_slice_zero))
+        self.zero_button = tk.Button(frame5, text="ZERO", width=10, command=lambda: self.alter_all_slices(self.set_slice_zero))
         self.zero_button.pack(padx=2, pady=1, side=tk.LEFT)
 
-        top_buffer = tk.Label(frame5, text="|", width=10)
+        top_buffer = tk.Label(frame5, text="|", width=5)
         top_buffer.pack(padx=2, pady=0, side=tk.LEFT)        
         
         self.slice_up_button = tk.Button(frame5, text="Slice up", width=12, command=self.slice_up)
@@ -196,29 +196,28 @@ class MainApp(Frame):
         
 
         
-        
         frame6= Frame(self)
         frame6.pack(fill=tk.BOTH, expand=False)
         
         local_ops_label = tk.Label(frame6, text="Local morphological operations         ", width=25)
         local_ops_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NW)
         
-        self.local_erode_button = tk.Button(frame6, text="ERODE", width=8, command=lambda: self.alter_current_slice(mor.binary_erosion))
+        self.local_erode_button = tk.Button(frame6, text="ERODE", width=10, command=lambda: self.alter_current_slice(mor.binary_erosion))
         self.local_erode_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.local_dilate_button = tk.Button(frame6, text="DILATE", width=8, command=lambda: self.alter_current_slice(mor.binary_dilation))
+        self.local_dilate_button = tk.Button(frame6, text="DILATE", width=10, command=lambda: self.alter_current_slice(mor.binary_dilation))
         self.local_dilate_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.local_open_button = tk.Button(frame6, text="OPEN", width=8, command=lambda: self.alter_current_slice(mor.binary_opening))
+        self.local_open_button = tk.Button(frame6, text="OPEN", width=10, command=lambda: self.alter_current_slice(mor.binary_opening))
         self.local_open_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.local_close_button = tk.Button(frame6, text="CLOSE", width=8, command=lambda: self.alter_current_slice(mor.binary_closing))
+        self.local_close_button = tk.Button(frame6, text="CLOSE", width=10, command=lambda: self.alter_current_slice(mor.binary_closing))
         self.local_close_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        self.local_zero_button = tk.Button(frame6, text="ZERO", width=8, command=lambda: self.alter_current_slice(self.set_slice_zero))
+        self.local_zero_button = tk.Button(frame6, text="ZERO", width=10, command=lambda: self.alter_current_slice(self.set_slice_zero))
         self.local_zero_button.pack(padx=2, pady=1, side=tk.LEFT)
         
-        bottom_buffer = tk.Label(frame6, text="|", width=10)
+        bottom_buffer = tk.Label(frame6, text="|", width=5)
         bottom_buffer.pack(padx=2, pady=0, side=tk.LEFT)
         
         self.slice_down_button = tk.Button(frame6, text="Slice down", width=12, command=self.slice_down)
@@ -230,7 +229,32 @@ class MainApp(Frame):
         self.undo_morph_button = tk.Button(frame6, text="Undo", width=12, command=self.undo_morph)
         self.undo_morph_button.pack(padx=6, pady=1, side=tk.RIGHT)
         
+        
+        
+        frame7= Frame(self)
+        frame7.pack(fill=tk.BOTH, expand=False)
+        
+        roi_label = tk.Label(frame7, text="Region selection operations              ", width=25)
+        roi_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NW)
+        
+        self.lasso_area_button = tk.Button(frame7, text="LASSO", width=10, command=self.lasso_region)
+        self.lasso_area_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.finish_lasso_button = tk.Button(frame7, text="CANCEL LASSO", width=10, command=self.finish_lasso)
+        self.finish_lasso_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.keep_area_button = tk.Button(frame7, text="Keep", width=10, command=self.keep_lassoed_areas)
+        self.keep_area_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        self.exclude_area_button = tk.Button(frame7, text="Delete", width=10, command=self.delete_lassoed_areas)
+        self.exclude_area_button.pack(padx=2, pady=1, side=tk.LEFT)
+                
+        self.fill_area_button = tk.Button(frame7, text="Fill", width=10, command=self.fill_lassoed_areas)
+        self.fill_area_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        
         self.n_writes = 0
+        self.stage = 0
 
 
         
@@ -261,6 +285,7 @@ class MainApp(Frame):
         
         self.binary_cmp = matplotlib.colors.ListedColormap(newcolors2)
         
+        self.stage = 1
         self.setup_stage(1)
         
         
@@ -325,6 +350,7 @@ class MainApp(Frame):
         
     def return_to_binarization_cmd(self):
         self.current_overlay = self.probability_map
+        self.stage = 2
         self.setup_stage(2)
         self.display_scan(self.bg_scan.get(), self.slice_slider.get())
         
@@ -369,6 +395,12 @@ class MainApp(Frame):
             self.local_close_button['state'] = tk.DISABLED
             self.local_zero_button['state'] = tk.DISABLED
             
+            self.keep_area_button['state'] = tk.DISABLED
+            self.exclude_area_button['state'] = tk.DISABLED
+            self.fill_area_button['state'] = tk.DISABLED
+            self.lasso_area_button['state'] = tk.DISABLED
+            self.finish_lasso_button['state'] = tk.DISABLED
+            
             self.save_mask_button['state'] = tk.DISABLED
             self.calculate_stats_button['state'] = tk.DISABLED
             self.return_to_binarization_button['state'] = tk.DISABLED
@@ -409,6 +441,12 @@ class MainApp(Frame):
             self.local_close_button['state'] = tk.DISABLED
             self.local_zero_button['state'] = tk.DISABLED
             
+            self.keep_area_button['state'] = tk.DISABLED
+            self.exclude_area_button['state'] = tk.DISABLED
+            self.fill_area_button['state'] = tk.DISABLED
+            self.lasso_area_button['state'] = tk.DISABLED
+            self.finish_lasso_button['state'] = tk.DISABLED
+            
             self.save_mask_button['state'] = tk.DISABLED
             self.calculate_stats_button['state'] = tk.DISABLED
             self.return_to_binarization_button['state'] = tk.DISABLED
@@ -448,6 +486,12 @@ class MainApp(Frame):
             self.local_open_button['state'] = tk.NORMAL
             self.local_close_button['state'] = tk.NORMAL
             self.local_zero_button['state'] = tk.NORMAL
+            
+            self.keep_area_button['state'] = tk.DISABLED
+            self.exclude_area_button['state'] = tk.DISABLED
+            self.fill_area_button['state'] = tk.DISABLED
+            self.lasso_area_button['state'] = tk.NORMAL
+            self.finish_lasso_button['state'] = tk.DISABLED
             
             self.save_mask_button['state'] = tk.NORMAL
             self.calculate_stats_button['state'] = tk.NORMAL
@@ -514,6 +558,7 @@ class MainApp(Frame):
             
         self.n_writes = 0
                 
+        self.stage = 2
         self.setup_stage(2)
         
         self.set_output_folder()
@@ -530,9 +575,19 @@ class MainApp(Frame):
         self.probability_map_file = os.path.join(self.output_folder, 'probability_map.nii.gz')
         ugh.execute_bianca(master=bianca_master_file, model=self.bianca_entry.get(), outname=self.probability_map_file)
         
+        self.mask_on_checkbox.select()
+        
         self.probability_map = ugh.read_nifti_radiological(self.probability_map_file)
         self.flair = ugh.read_nifti_radiological(self.flair_entry.get())
         self.t1 = ugh.read_nifti_radiological(self.t1_entry.get())
+        
+        self.sh = self.flair.shape
+        self.nx = self.sh[0]
+        self.ny = self.sh[1]
+        self.nz = self.sh[2]
+        
+        self.lasso_truth = np.zeros((self.nx, self.ny), bool)
+        self.lasso_truth_blank = self.lasso_truth.copy()
         
         self.radio_flair.select()
         
@@ -558,9 +613,12 @@ class MainApp(Frame):
         self.brain_voxels = (brain > 0).sum()
         self.brain_vol = self.brain_voxels * self.voxel_vol
         
+
+        
     
     def binarize_probability_mask(self):
         
+        self.stage = 3
         self.setup_stage(3)
         
         self.binary_mask = self.probability_map.copy()
@@ -572,7 +630,7 @@ class MainApp(Frame):
         self.display_scan(self.bg_scan.get(), self.slice_slider.get())
     
     
-    def display_scan(self, scan, sli, cmap=matplotlib.cm.gray):
+    def display_scan(self, scan, sli, cmap=matplotlib.cm.gray, end_lasso=True):
   
         
         #print('BG called')
@@ -607,7 +665,10 @@ class MainApp(Frame):
         # creating the Tkinter canvas 
         # containing the Matplotlib figure
         
-        self.canvas.draw() 
+        self.canvas.draw()
+        
+        if end_lasso:
+            self.finish_lasso()
       
         # placing the canvas on the Tkinter window 
       
@@ -729,6 +790,77 @@ class MainApp(Frame):
         
         self.current_overlay = self.binary_operation_all(operation, self.current_overlay)
         self.display_scan(self.bg_scan.get(), self.slice_slider.get())
+        
+
+    def onselect(self, verts):
+        p = matplotlib.path.Path(verts)
+        current_im = self.current_overlay[:,:,self.slice_slider.get()]
+        sh = current_im.shape
+        px, py = np.arange(sh[1]), np.arange(sh[1])
+        
+        xv, yv = np.meshgrid(px, py)
+        pix = np.vstack((xv.flatten(), yv.flatten())).T
+        
+        ind = p.contains_points(pix, radius=0)
+        
+        truthy = np.reshape(ind, (sh[0], sh[1]))
+        
+        self.lasso_truth = np.logical_or(self.lasso_truth, truthy)
+    
+        
+    def lasso_region(self):
+        
+        self.lasso = matplotlib.widgets.LassoSelector(self.plot1, self.onselect)
+        
+        self.keep_area_button['state'] = tk.NORMAL
+        self.exclude_area_button['state'] = tk.NORMAL
+        self.fill_area_button['state'] = tk.NORMAL
+        self.lasso_area_button['state'] = tk.DISABLED
+        self.finish_lasso_button['state'] = tk.NORMAL
+        
+        
+    def finish_lasso(self):
+        try:
+            del self.lasso
+        except AttributeError:
+            pass
+        try:
+            self.lasso_truth = self.lasso_truth_blank
+        except AttributeError:
+            pass
+        
+        
+        if self.stage == 3:
+            self.lasso_area_button['state'] = tk.NORMAL
+        
+        self.keep_area_button['state'] = tk.DISABLED
+        self.exclude_area_button['state'] = tk.DISABLED
+        self.fill_area_button['state'] = tk.DISABLED
+        self.finish_lasso_button['state'] = tk.DISABLED
+        
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get(), end_lasso=False)
+        
+    
+    def fill_lassoed_areas(self):
+        self.take_snapshot()
+        # 1 everything inside the lasso
+        self.current_overlay[:,:,self.slice_slider.get()][self.lasso_truth] = 1
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get(), end_lasso=True)
+    
+    
+    def keep_lassoed_areas(self):
+        self.take_snapshot()
+        # zero everything outside the lasso
+        self.current_overlay[:,:,self.slice_slider.get()][~self.lasso_truth] = 0
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get(), end_lasso=True)        
+    
+    
+    def delete_lassoed_areas(self):
+        self.take_snapshot()
+        # 0 everything inside the lasso
+        self.current_overlay[:,:,self.slice_slider.get()][self.lasso_truth] = 0
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get(), end_lasso=True)
+    
 
     
     def popupmsg(self, msg, title='!!! ATTENTION !!!'):
@@ -744,7 +876,7 @@ class MainApp(Frame):
 def main():
 
     root = Tk()
-    root.geometry("1200x1000+400+200")
+    root.geometry("1250x1000+400+200")
     app = MainApp(root)
     root.mainloop()
 
