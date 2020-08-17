@@ -28,7 +28,8 @@ def read_nifti_radiological(img_path):
     A numpy array representing the scan
 
     """
-    img = nib.load(img_path).get_fdata()
+    raw = nib.load(img_path)
+    img = raw.get_fdata()
     img = np.rot90(img, k=1)
     #img = ndimage.rotate(img.T, 180)
     img = np.fliplr(img)

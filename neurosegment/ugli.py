@@ -25,6 +25,7 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import scipy.ndimage.morphology as mor
+import nibabel as nib
 
 import ugli_helpers as ugh
 
@@ -187,10 +188,10 @@ class MainApp(Frame):
         self.slice_up_button = tk.Button(frame5, text="Slice up", width=12, command=self.slice_up)
         self.slice_up_button.pack(padx=6, pady=1, side=tk.LEFT)
 
-        self.save_mask_button = tk.Button(frame5, text="Save mask", width=12, command=None)
+        self.save_mask_button = tk.Button(frame5, text="Save mask", width=12, command=self.write_binarized_file)
         self.save_mask_button.pack(padx=6, pady=1, side=tk.RIGHT)
         
-        self.calculate_stats_button = tk.Button(frame5, text="Write statistics", width=12, command=None)
+        self.calculate_stats_button = tk.Button(frame5, text="Show statistics", width=12, command=self.stats_popup)
         self.calculate_stats_button.pack(padx=6, pady=1, side=tk.RIGHT)
         
 
@@ -228,6 +229,8 @@ class MainApp(Frame):
         
         self.undo_morph_button = tk.Button(frame6, text="Undo", width=12, command=self.undo_morph)
         self.undo_morph_button.pack(padx=6, pady=1, side=tk.RIGHT)
+        
+        self.n_writes = 0
 
 
         
@@ -260,6 +263,65 @@ class MainApp(Frame):
         
         self.setup_stage(1)
         
+        
+    def write_binarized_file(self):
+        
+        print('Writing binarized mask')
+        
+        the_data = self.current_overlay.copy()
+        the_name = os.path.join(self.output_folder, f'binarized_map_v{self.n_writes}.nii.gz')
+        companion_name = os.path.join(self.output_folder, f'binarized_map_v{self.n_writes}_stats.csv')
+        
+        # need to rotate and flip back to original nibabel orientation
+        the_data = np.fliplr(the_data)
+        the_data = np.rot90(the_data, k=3)
+        
+        out = nib.Nifti1Image(the_data, self.mirage, self.template_header)
+        nib.save(out, the_name)
+        
+        the_dict = self.calculate_stats()
+        
+        the_series = pd.Series(the_dict)
+        the_series.to_csv(companion_name)
+        
+        self.n_writes += 1
+    
+    
+    def calculate_stats(self):
+        
+        lesion_volume, n_lesion_voxels, voxel_volume = self.calculate_lesion_vol()
+        
+        stats_headers = ['lesion_vol', 'n_lesion_voxels', 'infarct_frac', 'flair_vol', 'n_flair_voxels', 'voxel_vol',  'x', 'y', 'z', ]
+        stats = [lesion_volume, n_lesion_voxels, lesion_volume/self.brain_vol, self.brain_vol, self.brain_voxels, voxel_volume]
+        stats.extend(self.voxel_dims)
+        
+        the_dict = {h: s for h,s in zip(stats_headers, stats)}
+        
+        return the_dict
+    
+    
+    def stats_popup(self):
+        
+        the_dict = self.calculate_stats()
+        
+        writeout = f'''Lesion volume: {int(the_dict["lesion_vol"])}
+        Brain volume: {int(the_dict["flair_vol"])}
+        Infarction: {round(the_dict["infarct_frac"]*100,1)}%'''
+        
+        self.popupmsg(writeout)
+        
+    
+        
+    def calculate_lesion_vol(self):
+        # returns the lesion vol, n lesion voxels and volume of a voxel as a tuple
+        
+        n_lesion_voxels = self.current_overlay.sum()
+        voxel_volume = np.product(self.voxel_dims)
+        lesion_volume = voxel_volume * n_lesion_voxels
+        
+        return lesion_volume, n_lesion_voxels, voxel_volume
+        
+    
         
     def return_to_binarization_cmd(self):
         self.current_overlay = self.probability_map
@@ -450,10 +512,14 @@ class MainApp(Frame):
             self.popupmsg(m)
             raise Exception('Insufficient imaging input')
             
+        self.n_writes = 0
                 
         self.setup_stage(2)
         
         self.set_output_folder()
+        self.flair_file = self.flair_entry.get()
+        self.t1_file = self.t1_entry.get()
+        
         bianca_master_file = ugh.generate_bianca_master(self.output_folder, self.flair_entry.get(), self.t1_entry.get())
         
         self.binarize_slider.set(50)
@@ -481,7 +547,16 @@ class MainApp(Frame):
         
         self.current_overlay = self.probability_map
 
-        #self.popupmsg('Files loaded. BIANCA successfully executed')
+        template = nib.load(self.flair_file)
+        self.template_header = template.header
+        self.voxel_dims = self.template_header['pixdim'][1:4]
+        self.mirage = template.affine
+        
+        self.voxel_vol = np.product(self.voxel_dims)
+        
+        brain = template.get_fdata()
+        self.brain_voxels = (brain > 0).sum()
+        self.brain_vol = self.brain_voxels * self.voxel_vol
         
     
     def binarize_probability_mask(self):
