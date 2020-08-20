@@ -32,7 +32,7 @@ def read_nifti_radiological(img_path):
     img = raw.get_fdata()
     img = np.rot90(img, k=1)
     #img = ndimage.rotate(img.T, 180)
-    img = np.fliplr(img)
+    # img = np.fliplr(img) # uncomment for neurological orientation, along with the writing method in uglu
     
     return img
     
