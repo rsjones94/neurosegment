@@ -87,7 +87,7 @@ def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, o
 
     """
     
-    bianca = f'bianca --singlefile={master_name} --querysubjectnum={subject_index} --trainingnums=all --brainmaskfeaturenum={skullstrip_col} --labelfeaturenum={mask_col} --saveclassifierdata={out_name}_classifer -o {out_name}'
+    bianca = f'bianca --singlefile={master_name} --querysubjectnum={subject_index} --trainingnums=all --brainmaskfeaturenum={skullstrip_col} --selectpts=surround --trainingpts=equalpoints --labelfeaturenum={mask_col} --saveclassifierdata={out_name}_classifer -o {out_name}'
     if run_cmd:
         os.system(bianca)
     return bianca
