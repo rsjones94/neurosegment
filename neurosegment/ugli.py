@@ -6,6 +6,7 @@ related GUI that helps generates lesion masks from pre-trained BIANCA models
 """
 
 import os
+import sys
 
 from tkinter import Tk
 import tkinter as tk
@@ -21,13 +22,16 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import matplotlib
-
 import numpy as np
 import pandas as pd
 import scipy.ndimage.morphology as mor
 import nibabel as nib
 
 import ugli_helpers as ugh
+import gbs
+
+
+
 
 class MainApp(Frame):
 
@@ -253,6 +257,18 @@ class MainApp(Frame):
         self.fill_area_button.pack(padx=2, pady=1, side=tk.LEFT)
         
         
+        
+        frame8= Frame(self)
+        frame8.pack(fill=tk.BOTH, expand=False)
+        
+        roi_label = tk.Label(frame8, text="Geometry sieving operations           ", width=25)
+        roi_label.pack(padx=2, pady=0, side=tk.TOP, anchor=tk.NW)
+        
+        self.gbs_sci_button = tk.Button(frame8, text="GBS SCI", width=10, command=self.gbs_sci)
+        self.gbs_sci_button.pack(padx=2, pady=1, side=tk.LEFT)
+        
+        
+        
         self.n_writes = 0
         self.stage = 0
 
@@ -406,6 +422,8 @@ class MainApp(Frame):
             self.return_to_binarization_button['state'] = tk.DISABLED
             self.undo_morph_button['state'] = tk.DISABLED
             
+            self.gbs_sci_button['state'] = tk.DISABLED
+            
         elif stage == 2:
             self.display_label.config(text='Step 2: probability map binarization')
             self.overlay_cmap = self.probability_cmp
@@ -451,6 +469,8 @@ class MainApp(Frame):
             self.calculate_stats_button['state'] = tk.DISABLED
             self.return_to_binarization_button['state'] = tk.DISABLED
             self.undo_morph_button['state'] = tk.DISABLED
+            
+            self.gbs_sci_button['state'] = tk.DISABLED
             
         elif stage == 3:
             self.display_label.config(text='Step 3: binary map adjustment')
@@ -498,6 +518,8 @@ class MainApp(Frame):
             self.return_to_binarization_button['state'] = tk.NORMAL
             self.undo_morph_button['state'] = tk.NORMAL
             
+            self.gbs_sci_button['state'] = tk.NORMAL
+            
             
     def slice_up(self):
         
@@ -527,7 +549,7 @@ class MainApp(Frame):
         entry.insert(0,filename)
         
     
-    def find_r_model(self):
+    def find_default_model(self):
         script_folder = os.path.dirname(os.path.realpath(__file__))
         repo_folder = os.path.dirname(script_folder)
         default_bianca = os.path.join(repo_folder, 'bin', 'ugli_bianca_models', 'default_bianca_classifer')
@@ -872,11 +894,19 @@ class MainApp(Frame):
         B1.pack()
         popup.mainloop()
         
+        
+    def gbs_sci(self):
+        self.take_snapshot()
+        
+        self.current_overlay = gbs.sieve_image(self.current_overlay)
+        
+        self.display_scan(self.bg_scan.get(), self.slice_slider.get(), end_lasso=True)
+        
 
 def main():
 
     root = Tk()
-    root.geometry("1250x1000+400+200")
+    root.geometry("1250x1050+400+200")
     app = MainApp(root)
     root.mainloop()
 

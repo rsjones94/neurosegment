@@ -35,7 +35,6 @@ def read_nifti_radiological(img_path):
     # img = np.fliplr(img) # uncomment for neurological orientation, along with the writing method in uglu
     
     return img
-    
 
 
 def generate_bianca_master(parent_folder, flair, t1):
