@@ -527,7 +527,7 @@ class MainApp(Frame):
         entry.insert(0,filename)
         
     
-    def find_default_model(self):
+    def find_r_model(self):
         script_folder = os.path.dirname(os.path.realpath(__file__))
         repo_folder = os.path.dirname(script_folder)
         default_bianca = os.path.join(repo_folder, 'bin', 'ugli_bianca_models', 'default_bianca_classifer')
