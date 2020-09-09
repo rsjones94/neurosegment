@@ -11,7 +11,7 @@ import glob
 
 import pandas as pd
 
-mr_id_cols = ['mr1_mr_id', 'mr2_mr_id', 'mr3_mr_id']
+mr_id_cols = ['mr1_mr_id_real', 'mr2_mr_id_real', 'mr3_mr_id_real']
 scan_id_cols = ['mr1_scan_id', 'mr2_scan_id', 'mr3_scan_id']
 study_id_col = 'study_id'
 

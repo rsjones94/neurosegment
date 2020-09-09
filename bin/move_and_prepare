@@ -36,16 +36,17 @@ import pandas as pd
 
 # column names in the csv that contain pt IDs of interest
 #pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
-pt_id_cols = ['mr1_mr_id', 'mr2_mr_id', 'mr3_mr_id']
+pt_id_cols = ['mr1_mr_id_real', 'mr2_mr_id_real', 'mr3_mr_id_real']
 
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
-path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii'
+path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii64'
 
 # relates a unique sequence in a filename that can be used to identify a file
 # as a certain type of image to the basename for the ouput, whether and what to
 # register them to, and whether to skullstrip them
 # signatures work such that if the key is found in the filename and the excl
 # strings are NOT found in the filename, then that file is IDd as that signature
+"""
 signature_relationships = {('FLAIR_cor','FLAIR_COR'):
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no', 'excl':['AX','ax','axial','AXIAL']},
                           ('FLAIR_AX', 'T2W_FLAIR'):
@@ -53,17 +54,32 @@ signature_relationships = {('FLAIR_cor','FLAIR_COR'):
                           ('3DT1', 'T1W_3D'): 
                               {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes', 'excl':['FLAIR']},
                           }
+"""
+
+signature_relationships = {
+                          ('3DT1', 'T1W_3D'): 
+                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes', 'excl':['FLAIR']},
+                          }
     
 # list of dicts giving parameters for FAST
 # inputs are image signatures
-"""fast_params = [
+"""
+fast_params = [
                 {'inputs':['FLAIR_AX', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
                 {'inputs':['FLAIR_AX'], 'baseout':'fast_FLAIR', 'n':4},
                 {'inputs':['3DT1'], 'baseout':'fast_T1', 'n':4}
               ]
 """
 
+"""
+fast_params = [
+                {'inputs':[('3DT1', 'T1W_3D')], 'baseout':'fast_T1', 'n':3}
+              ]
+"""
+
+
 fast_params = []
+run_siena = True
     
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
@@ -153,7 +169,7 @@ except AssertionError:
 
 # datetime object containing current date and time
 now = datetime.now()
-dt_string = now.strftime("%d-%m-%y-%H:%M")
+dt_string = now.strftime("%d-%m-%y-%H+%M")
 message_file_name = os.path.join(targetfolder, f'move_and_prepare_messages_{dt_string}.txt')
 df_file_name = os.path.join(targetfolder, f'move_and_prepare_tabular_{dt_string}.csv')
 message_file = open(message_file_name, 'w')
@@ -314,6 +330,13 @@ for pt in pt_ids:
                 construction += f' -S {len(param_dict["inputs"])}'
             for sig in param_dict['inputs']:
                 construction += f' {sig_tracker[sig]["final_nifti"]}'
+                
+            print(f'Construction:\n{construction}')
+            os.system(construction)
+            
+        # run SIENA
+        if run_siena:
+            construction = f'sienax {sig_tracker[signature]["raw_nifti"]} -B "-f {skullstrip_f_val}"'
                 
             print(f'Construction:\n{construction}')
             os.system(construction)
