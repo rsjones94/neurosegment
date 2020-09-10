@@ -314,7 +314,7 @@ class MainApp(Frame):
         companion_name = os.path.join(self.output_folder, f'binarized_map_v{self.n_writes}_stats.csv')
         
         # need to rotate and flip back to original nibabel orientation
-        # the_data = np.fliplr(the_data) # uncomment for radiological view, along with the reading function in ugly_helpers
+        # the_data = np.fliplr(the_data) # uncomment for neurological view, along with the reading function in ugly_helpers
         the_data = np.rot90(the_data, k=3)
         
         out = nib.Nifti1Image(the_data, self.mirage, self.template_header)
