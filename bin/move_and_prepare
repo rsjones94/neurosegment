@@ -41,12 +41,14 @@ pt_id_cols = ['mr1_mr_id_real', 'mr2_mr_id_real', 'mr3_mr_id_real']
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
 path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii64'
 
+mni_standard = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
+
 # relates a unique sequence in a filename that can be used to identify a file
 # as a certain type of image to the basename for the ouput, whether and what to
 # register them to, and whether to skullstrip them
 # signatures work such that if the key is found in the filename and the excl
 # strings are NOT found in the filename, then that file is IDd as that signature
-"""
+
 signature_relationships = {('FLAIR_cor','FLAIR_COR'):
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no', 'excl':['AX','ax','axial','AXIAL']},
                           ('FLAIR_AX', 'T2W_FLAIR'):
@@ -54,13 +56,13 @@ signature_relationships = {('FLAIR_cor','FLAIR_COR'):
                           ('3DT1', 'T1W_3D'): 
                               {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes', 'excl':['FLAIR']},
                           }
-"""
 
+"""
 signature_relationships = {
                           ('3DT1', 'T1W_3D'): 
                               {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes', 'excl':['FLAIR']},
                           }
-    
+"""
 # list of dicts giving parameters for FAST
 # inputs are image signatures
 """
@@ -79,7 +81,7 @@ fast_params = [
 
 
 fast_params = []
-run_siena = True
+run_siena = False
     
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
@@ -301,6 +303,9 @@ for pt in pt_ids:
         for signature, subdict in signature_relationships.items():
             if subdict['register'] == 'master':
                 master_ref = sig_tracker[signature]['skullstripped_nifti']
+                omat_cmd = f'flirt -in {master_ref} -ref {mni_standard} -out {master_ref}_mni.nii.gz -omat master2mni.mat'
+                
+                
         for signature, subdict in signature_relationships.items():
             if subdict['register'] not in ('master', 'no'):
                 sig_tracker[signature]['registered_nifti'] = os.path.join(bin_folder, f'{subdict["basename"]}_registered.nii.gz')
