@@ -76,6 +76,17 @@ class MainApp(Frame):
         self.flair_entry = tk.Entry(frame2)
         self.flair_entry.pack(side=tk.RIGHT, fill=tk.X, padx=5, expand=True)
         
+
+
+        frame2p0625 = Frame(self)
+        frame2p0625.pack(fill=tk.X)
+        
+        self.trans_button = tk.Button(frame2p0625, text="Transf. matrix", width=10, command=lambda: self.ask_for_file(self.trans_entry))
+        self.trans_button.pack(side=tk.LEFT, padx=5, pady=5)
+        
+        self.trans_entry = tk.Entry(frame2p0625)
+        self.trans_entry.pack(side=tk.LEFT, fill=tk.X, padx=5, expand=True)
+        
         
         
         frame2p125 = Frame(self)
@@ -386,6 +397,8 @@ class MainApp(Frame):
             self.t1_entry['state'] = tk.NORMAL
             self.flair_entry['state'] = tk.NORMAL
             self.run_bianca_button['state'] = tk.NORMAL
+            self.trans_button ['state']= tk.NORMAL
+            self.trans_entry['state'] = tk.NORMAL
             
             self.radio_t1['state'] = tk.DISABLED
             self.mask_on_checkbox['state'] = tk.DISABLED
@@ -434,6 +447,8 @@ class MainApp(Frame):
             self.t1_entry['state'] = tk.NORMAL
             self.flair_entry['state'] = tk.NORMAL
             self.run_bianca_button['state'] = tk.NORMAL
+            self.trans_button ['state']= tk.NORMAL
+            self.trans_entry['state'] = tk.NORMAL
             
             self.radio_t1['state'] = tk.NORMAL
             self.mask_on_checkbox['state'] = tk.NORMAL
@@ -482,6 +497,8 @@ class MainApp(Frame):
             self.t1_entry['state'] = tk.NORMAL
             self.flair_entry['state'] = tk.NORMAL
             self.run_bianca_button['state'] = tk.NORMAL
+            self.trans_button ['state']= tk.NORMAL
+            self.trans_entry['state'] = tk.NORMAL
             
             self.radio_t1['state'] = tk.NORMAL
             self.mask_on_checkbox['state'] = tk.NORMAL
@@ -587,7 +604,7 @@ class MainApp(Frame):
         self.flair_file = self.flair_entry.get()
         self.t1_file = self.t1_entry.get()
         
-        bianca_master_file = ugh.generate_bianca_master(self.output_folder, self.flair_entry.get(), self.t1_entry.get())
+        bianca_master_file = ugh.generate_bianca_master(self.output_folder, self.flair_entry.get(), self.t1_entry.get(), self.trans_entry.get())
         
         self.binarize_slider.set(50)
         
@@ -906,7 +923,7 @@ class MainApp(Frame):
 def main():
 
     root = Tk()
-    root.geometry("1250x1050+400+200")
+    root.geometry("1300x1100+400+200")
     app = MainApp(root)
     root.mainloop()
 

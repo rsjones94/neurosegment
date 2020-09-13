@@ -37,20 +37,22 @@ def read_nifti_radiological(img_path):
     return img
 
 
-def generate_bianca_master(parent_folder, flair, t1):
-    # returns the name out the output master file
+def generate_bianca_master(parent_folder, flair, t1, trans):
+    # returns the name of the output master file
+    # flair, t1, transformation matrix
     
     master_name = os.path.join(parent_folder, 'bianca_master.txt')
     message_file = open(master_name, 'w')
-    message_file.write(f'{flair} {t1}')
+    message_file.write(f'{flair} {t1} {trans}')
     message_file.close()
     return master_name
 
 
 def execute_bianca(master, model, outname):
     """
-    Generates a BIANCA probability map given flair, t1, a master file
-    and a pretrained BIANCA model. Assumes the master file uses a column layout that mimics
+    Generates a BIANCA probability map given flair, t1, a transformation matrix
+    remapping FLAIR+T1 to MNI space, a master file and a pretrained BIANCA model.
+    Assumes the master file uses a column layout that mimics
     that used to train the model
     
 
@@ -69,6 +71,6 @@ def execute_bianca(master, model, outname):
 
     """
     
-    cmd = f'bianca --singlefile={master} --querysubjectnum={1} --brainmaskfeaturenum=1 --loadclassifierdata={model} -o {outname}'
+    cmd = f'bianca --singlefile={master} --querysubjectnum={1} --brainmaskfeaturenum=1 --matfeaturenum=3 --spatialweight=1 --loadclassifierdata={model} -o {outname}'
     print(f'BIANCA execution: {cmd}')
     os.system(cmd)
