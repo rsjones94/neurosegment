@@ -11,19 +11,20 @@ import pandas as pd
 import bianca_helpers as bh
 
 training_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/'
-master_file_path = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation_master.txt'
+master_file_path = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation_with_spatial_master.txt'
 training_subfolder = 'processed'
-training_stems = ['axFLAIR.nii.gz', 'axT1.nii.gz', 'axFLAIR_mask.nii.gz']
+training_stems = ['axFLAIR.nii.gz', 'axT1.nii.gz', 'axFLAIR_mask.nii.gz', 'master2mni.mat']
 input_csv = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/move_and_prepare_tabular_24-07-20-09_53.csv'
 training_boolean_column_header = 'training'
 pt_id_col_header = 'id'
 
 brainmask_col = 1 # in training_stems, which (non zero indexed) index contains the scan that has the best brainmasks?
 trainingmask_col = 3 # which index has the manual lesion mask
+transmat_col = 4 # which index has the transformation matrix from scan to MNI space
 
 thresh = 0.7
 
-validation_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation/' # should not exist
+validation_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/bianca/big_validation_with_spatial/' # should not exist
 ####
 
 
@@ -57,6 +58,7 @@ for i, row in enumerate(content_list):
                                   excl,
                                   brainmask_col,
                                   trainingmask_col,
+                                  transmat_col,
                                   output_name)
     
     files_on_row = row.split(' ')

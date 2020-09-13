@@ -303,8 +303,11 @@ for pt in pt_ids:
         for signature, subdict in signature_relationships.items():
             if subdict['register'] == 'master':
                 master_ref = sig_tracker[signature]['skullstripped_nifti']
-                omat_cmd = f'flirt -in {master_ref} -ref {mni_standard} -out {master_ref}_mni.nii.gz -omat master2mni.mat'
                 
+                omat_path = os.path.join(processed_folder, 'master2mni.mat')
+                mni_path = os.path.join(bin_folder, f'{subdict["basename"]}_mni.nii.gz')
+                omat_cmd = f'flirt -in {master_ref} -ref {mni_standard} -out {mni_path} -omat omat_path'
+                os.system(omat_cmd)
                 
         for signature, subdict in signature_relationships.items():
             if subdict['register'] not in ('master', 'no'):

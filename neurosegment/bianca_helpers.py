@@ -63,7 +63,7 @@ def generate_master(top_folder, master_name, training_subfolder,
     message_file.close()
 
 
-def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, out_name, run_cmd=True):
+def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, transformation_col, out_name, run_cmd=True):
     """
     Constructs a string that can be passed to the OS to execute BIANCA
     
@@ -78,6 +78,8 @@ def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, o
         1-indexed index of the column that contains a skullstripping mask (usually use the FLAIR).
     mask_col : int
         1-indexed index of the column that contains the brain lesion mask.
+    transformation_col : int
+        1-indexed index of the column that contains the matrix that transforms your data to MNI space.
     out_name : str
         name of the trained BIANCA model to write.
 
@@ -87,7 +89,7 @@ def construct_bianca_cmd(master_name, subject_index, skullstrip_col, mask_col, o
 
     """
     
-    bianca = f'bianca --singlefile={master_name} --querysubjectnum={subject_index} --trainingnums=all --brainmaskfeaturenum={skullstrip_col} --selectpts=surround --trainingpts=equalpoints --labelfeaturenum={mask_col} --saveclassifierdata={out_name}_classifer -o {out_name}'
+    bianca = f'bianca --singlefile={master_name} --matfeaturenum={transformation_col} --spatialweight=1 --querysubjectnum={subject_index} --trainingnums=all --brainmaskfeaturenum={skullstrip_col} --selectpts=surround --trainingpts=equalpoints --labelfeaturenum={mask_col} --saveclassifierdata={out_name}_classifer -o {out_name}'
     if run_cmd:
         os.system(bianca)
     return bianca
