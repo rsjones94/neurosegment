@@ -18,15 +18,16 @@ from sklearn import neighbors
 
 
 # a dictionary of the properties to generate, where the keys are the properties and the entries are the min-maxes to normalize at
+"""
 PROPERTIES = {
-                'area': (0,1e4),
-                'extent': (0,1e3),
-                'filled_area': (0,1e4),
-                'inertia_tensor': (0,1e1),
-                'major_axis_length': (0,5e1),
-                'minor_axis_length': (0,5e1)
+                'area': (0,1e3),
+                'extent': (0,1),
+                'filled_area': (0,1e3),
+                'inertia_tensor': (-100,100),
+                'major_axis_length': (0,300),
+                'minor_axis_length': (0,300)
               }
-
+"""
 properties = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length']
 
 def read_nifti(img_path):

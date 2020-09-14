@@ -45,5 +45,5 @@ for pt, do_train in zip(df[pt_id_col], df[to_train_col]):
     training_data = training_data.append(lesion_info)
     
 
-print('Saving model')
-lof = gbs.train_and_save(training_data, out_model)
+#print('Saving model')
+#lof = gbs.train_and_save(training_data, out_model)
