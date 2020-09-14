@@ -12,9 +12,9 @@ import numpy as np
 import pandas as pd
 import scipy
 
-import sieve
+import gbs
 
-"""
+
 # for generating a default model
 
 master_csv = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/move_and_prepare_tabular_24-07-20-09_53.csv'
@@ -39,12 +39,11 @@ for pt, do_train in zip(df[pt_id_col], df[to_train_col]):
     
     folder = os.path.join(master_folder, pt, 'processed')
     lesion_file = os.path.join(folder, 'axFLAIR_mask.nii.gz')
-    lesion_im = train.read_nifti(lesion_file)
+    lesion_im = gbs.read_nifti(lesion_file)
     
-    lesion_info = train.generate_properties(lesion_im)
+    lesion_info = gbs.generate_properties(lesion_im)
     training_data = training_data.append(lesion_info)
     
 
 print('Saving model')
-train.train_and_save(training_data, out_model)
-"""
+lof = gbs.train_and_save(training_data, out_model)
