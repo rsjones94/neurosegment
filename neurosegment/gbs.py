@@ -45,13 +45,27 @@ def read_nifti(img_path):
 
 def label_2d(im):
     labeled = im.copy()
+    vals_seen = []
     adder = 0
     for i in range(labeled.shape[2]):
         sli = im[:,:,i]
         labeled_slice = measure.label(sli)
         labeled_slice = labeled_slice + (adder * (~np.isclose(labeled_slice, 0)))# we are labeling every slice individually, but we don't want to reuse labels between slices
         labeled[:,:,i] = labeled_slice
-        adder = labeled_slice.max()
+        the_max = labeled_slice.max()
+        if the_max > 0:
+            adder = the_max
+        
+        vals_seen.extend(np.unique(labeled_slice))
+        vals_seen.remove(0)
+        '''        
+        print(f'Vals_seen: {vals_seen}')
+        print(f'Adder: {adder}')
+        print(f'Unique in this slice: {np.unique(labeled_slice)}')
+        print('\n')
+        '''
+        if len(vals_seen) > len(np.unique(vals_seen)):
+            raise Exception(f'Labels are not unique after slice {i}')
         
     return labeled.astype(int)
 
@@ -167,10 +181,15 @@ def sieve_image(im, model_and_params=None, props=None):
     
     labeled = label_2d(im)
     #observations = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
-    observations = generate_properties(labeled, properties=props)
-    labels_only = pd.DataFrame(measure.regionprops_table(labeled, properties=['label']))
     
-    standard_observations = standardize_data(observations, params)
+    props_with_label = props
+    props_with_label.append('label')
+    
+    observations = generate_properties(labeled, props=props_with_label)
+    labels_only = pd.DataFrame(observations['label'])
+    observations_drop = observations.drop(columns='label')
+    
+    standard_observations = standardize_data(observations_drop, params)
     
     predictions = model.predict(standard_observations)
     labels_only['prediction'] = predictions
@@ -182,6 +201,6 @@ def sieve_image(im, model_and_params=None, props=None):
     new_im = im.copy()
     new_im[mask] = 0
     
-    return new_im
+    return new_im.astype(int)
     
     
