@@ -21,13 +21,13 @@ master_csv = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/move_a
 to_train_col = 'training'
 pt_id_col = 'id'
 master_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/'
-out_model = 'gbs_default.pkl'
+out_model = 'gbs_default_TESTING.pkl'
 
 ##########
 
 script_folder = os.path.dirname(os.path.realpath(__file__))
 repo_folder = os.path.dirname(script_folder)
-out_model = os.path.join(repo_folder, 'bin', 'default_model', out_model)
+out_model = os.path.join(repo_folder, 'bin', 'gbs_models', out_model)
 
 df = pd.read_csv(master_csv)
 
@@ -45,5 +45,5 @@ for pt, do_train in zip(df[pt_id_col], df[to_train_col]):
     training_data = training_data.append(lesion_info)
     
 
-#print('Saving model')
-#lof = gbs.train_and_save(training_data, out_model)
+print('Saving model')
+lof, params = gbs.train_and_save(training_data, out_model)

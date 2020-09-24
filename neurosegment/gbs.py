@@ -28,7 +28,7 @@ PROPERTIES = {
                 'minor_axis_length': (0,300)
               }
 """
-properties = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length']
+PROPERTIES = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length']
 
 def read_nifti(img_path):
     """
@@ -74,28 +74,62 @@ def generate_properties(im, props=PROPERTIES):
     return X_train
 
 
+def standardize_data(data, params):
+    
+    standard_data = data.copy()
+    
+    for col, mean, stddev in zip(data.columns, params[0], params[1]):
+        standard_data[col] = (standard_data[col] - mean) / stddev
+        
+    return standard_data
+
+
 def train_and_save(training_data, outloc):
     """
     Trains a LOF algorithm for the purposes of novelty detection and pickles it
+    Standardizes the data first (transforms each column by subtracting the mean
+    and then dividing by the stddev)
     
 
     Parameters
     ----------
     training_data : TYPE
         a pandas DataFrame of the training data.
+    out_loc : TYPE
+        name of the pickled object to save, which is a tuple with length 2, where
+        the first entry is the model. The second is a list of lists, where the first
+        list is the list of means used to transform the data and the second is the list
+        of the stddevs used to transform the data
 
     Returns
     -------
-    the model.
+     a tuple with length 2, where
+        the first entry is the model. The second is a list of lists, where the first
+        list is the list of means used to transform the data and the second is the list
+        of the stddevs used to transform the data
 
     """
+    standard_data = training_data.copy()
+    
+    means = []
+    stddevs = []
+    for col in training_data.columns:
+        mean = training_data[col].mean()
+        stddev = training_data[col].std()
+        
+        means.append(mean)
+        stddevs.append(stddev)
+        
+    standard_data = standardize_data(training_data, (means, stddevs))
+        
 
     lof = neighbors.LocalOutlierFactor(novelty=True)
-    lof.fit(training_data)
+    lof.fit(standard_data)
     
-    pickle.dump(lof, open(outloc, "wb" ))
+    out_obj = (lof, (means, stddevs))
+    pickle.dump(out_obj, open(outloc, "wb" ))
     
-    return lof
+    return out_obj
     
 
 def load_default_model():
@@ -103,23 +137,28 @@ def load_default_model():
     repo_folder = os.path.dirname(script_folder)
     model_loc = os.path.join(repo_folder, 'bin', 'gbs_models', 'gbs_default.pkl')
     
-    lof = pickle.load(open(model_loc, 'rb'))
+    lof, params = pickle.load(open(model_loc, 'rb'))
     
-    return lof
+    return lof, params
 
 
-def sieve_image(im, model=None, props=None):
+def sieve_image(im, model_and_params=None, props=None):
     
-    if model is None:
-        model = load_default_model()
+    if model_and_params is None:
+        model_and_params = load_default_model()
     if props is None:
         props=PROPERTIES
+    
+    model = model_and_params[0]
+    params = model_and_params[1]
     
     labeled = measure.label(im)
     observations = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
     labels_only = pd.DataFrame(measure.regionprops_table(labeled, properties=['label']))
     
-    predictions = model.predict(observations)
+    standard_observations = standardize_data(observations, params)
+    
+    predictions = model.predict(standard_observations)
     labels_only['prediction'] = predictions
     
     to_zero = [row['label'] for i, row in labels_only.iterrows() if row['prediction'] == -1]
