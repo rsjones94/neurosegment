@@ -166,7 +166,8 @@ def sieve_image(im, model_and_params=None, props=None):
     params = model_and_params[1]
     
     labeled = label_2d(im)
-    observations = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
+    #observations = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
+    observations = generate_properties(labeled, properties=props)
     labels_only = pd.DataFrame(measure.regionprops_table(labeled, properties=['label']))
     
     standard_observations = standardize_data(observations, params)
