@@ -21,7 +21,7 @@ master_csv = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/move_a
 to_train_col = 'training'
 pt_id_col = 'id'
 master_folder = '/Users/manusdonahue/Documents/Sky/segmentations_sci/pt_data/'
-out_model = 'gbs_default_TESTING.pkl'
+out_model = 'gbs_default.pkl'
 
 ##########
 

@@ -18,7 +18,7 @@ from sklearn import neighbors
 
 
 # PROPERTIES = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length'] # 3d compatible
-PROPERTIES = ['area', 'bbox_area', 'convex_area', 'eccentricity', 'equivalent_diameter', 'extent',
+PROPERTIES = ['area', 'bbox_area', 'eccentricity', 'equivalent_diameter', 'extent',
               'inertia_tensor', 'major_axis_length', 'minor_axis_length',
               'moments_hu', 'perimeter', 'solidity']
 
