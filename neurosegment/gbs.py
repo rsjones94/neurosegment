@@ -17,18 +17,10 @@ from skimage import measure
 from sklearn import neighbors
 
 
-# a dictionary of the properties to generate, where the keys are the properties and the entries are the min-maxes to normalize at
-"""
-PROPERTIES = {
-                'area': (0,1e3),
-                'extent': (0,1),
-                'filled_area': (0,1e3),
-                'inertia_tensor': (-100,100),
-                'major_axis_length': (0,300),
-                'minor_axis_length': (0,300)
-              }
-"""
-PROPERTIES = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length']
+# PROPERTIES = ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length'] # 3d compatible
+PROPERTIES = ['area', 'bbox_area', 'convex_area', 'eccentricity', 'equivalent_diameter', 'extent',
+              'inertia_tensor', 'major_axis_length', 'minor_axis_length',
+              'moments_hu', 'perimeter', 'solidity']
 
 def read_nifti(img_path):
     """
@@ -51,6 +43,19 @@ def read_nifti(img_path):
     return img
 
 
+def label_2d(im):
+    labeled = im.copy()
+    adder = 0
+    for i in range(labeled.shape[2]):
+        sli = im[:,:,i]
+        labeled_slice = measure.label(sli)
+        labeled_slice = labeled_slice + (adder * (~np.isclose(labeled_slice, 0)))# we are labeling every slice individually, but we don't want to reuse labels between slices
+        labeled[:,:,i] = labeled_slice
+        adder = labeled_slice.max()
+        
+    return labeled.astype(int)
+
+
 def generate_properties(im, props=PROPERTIES):
     """
     Generates geometric properties for shapes in the binary input image
@@ -61,7 +66,7 @@ def generate_properties(im, props=PROPERTIES):
     im : TYPE
         DESCRIPTION.
     props : TYPE, optional
-        DESCRIPTION. The default is ['area', 'extent', 'filled_area', 'inertia_tensor', 'major_axis_length', 'minor_axis_length'].
+        DESCRIPTION
 
     Returns
     -------
@@ -69,8 +74,16 @@ def generate_properties(im, props=PROPERTIES):
         DESCRIPTION.
 
     """
-    labeled = measure.label(im)
-    X_train = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
+    X_train = pd.DataFrame()
+    
+    labeled = label_2d(im)
+    for i in range(labeled.shape[2]):
+        sli = labeled[:,:,i]
+        try:
+            X_train = X_train.append(pd.DataFrame(measure.regionprops_table(sli, properties=props)))
+        except IndexError:
+            pass # happens when the slice has no regions in it
+        
     return X_train
 
 
@@ -152,7 +165,7 @@ def sieve_image(im, model_and_params=None, props=None):
     model = model_and_params[0]
     params = model_and_params[1]
     
-    labeled = measure.label(im)
+    labeled = label_2d(im)
     observations = pd.DataFrame(measure.regionprops_table(labeled, properties=props))
     labels_only = pd.DataFrame(measure.regionprops_table(labeled, properties=['label']))
     
