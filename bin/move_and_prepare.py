@@ -32,6 +32,17 @@ from time import time
 
 import pandas as pd
 
+
+# I am a liar this script is now accesseddirectly rather than as a bash command
+
+overwrite = 0
+
+infile = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
+
+targetfolder = '/Users/manusdonahue/Documents/Sky/sienax_and_fast/'
+
+filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped/'
+
 ##### the following variables generally just need to be set once
 
 # column names in the csv that contain pt IDs of interest
@@ -73,16 +84,16 @@ fast_params = [
               ]
 """
 
-"""
+
 fast_params = [
                 {'inputs':[('3DT1', 'T1W_3D')], 'baseout':'fast_T1', 'n':3}
               ]
-"""
 
 
-fast_params = []
-run_siena = False
-    
+
+#fast_params = []
+
+run_siena = True
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
 #####
@@ -139,6 +150,8 @@ def get_terminal(path):
 
 successful = 0
 
+
+"""
 bash_input = sys.argv[1:]
 options, remainder = getopt.getopt(bash_input, "i:f:t:o:", ["infile=","filefolder=","targetfolder=","overwrite="])
 
@@ -167,7 +180,7 @@ try:
     assert os.path.isdir(filefolder)
 except AssertionError:
     raise AssertionError('File folder does not exist')
-    
+"""
 
 # datetime object containing current date and time
 now = datetime.now()
@@ -201,7 +214,8 @@ pt_status = {pt:inner_dict.copy() for pt in pt_ids}
 # start processing
 all_subdirectories = [x[0] for x in os.walk(filefolder)] # list of all possible subdirectories
 
-for pt in pt_ids:
+for i, pt in enumerate(pt_ids):
+        print(f'On patient {pt} ({i+1} of {len(pt_ids)})')
         candidate_folders = [sub for sub in all_subdirectories if get_terminal(sub) == pt] # check if last subfolder is pt name
         n_cands = len(candidate_folders)
         pt_status[pt]['found_pt'] = n_cands
@@ -333,7 +347,7 @@ for pt in pt_ids:
             os.mkdir(fast_folder)
         
         for param_dict in fast_params:
-            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])}'
+            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])} -f {skullstrip_f_val}'
             if len(param_dict['inputs']) > 1:
                 construction += f' -S {len(param_dict["inputs"])}'
             for sig in param_dict['inputs']:
