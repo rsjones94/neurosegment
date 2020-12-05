@@ -28,26 +28,35 @@ import glob
 import shutil
 from datetime import datetime
 from contextlib import contextmanager
-from time import time
+from time import time, sleep
 
 import pandas as pd
+import numpy as np
 
+np.random.seed(0)
 
 # I am a liar this script is now accessed directly rather than as a bash command
 
 overwrite = 0
 
-infile = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
+infile = '/Users/manusdonahue/Documents/Sky/nigeria_mra/orig_report_labels.csv'
 
-targetfolder = '/Users/manusdonahue/Documents/Sky/sienax_and_fast/'
+targetfolder = '/Users/manusdonahue/Documents/Sky/nigeria_mra/data/'
 
 filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped/'
+
+skullstrip_f_val = 0.15
+
+n_healthy = 100
+
 
 ##### the following variables generally just need to be set once
 
 # column names in the csv that contain pt IDs of interest
 #pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
-pt_id_cols = ['mr1_mr_id_real', 'mr2_mr_id_real', 'mr3_mr_id_real']
+pt_id_cols = ['MRI 1 - MR ID']
+pt_id_cols_alt = ['Alternate MR ID 1']
+rect_name = ['MR 1 ID Rectified']
 
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
 path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii64'
@@ -60,43 +69,32 @@ mni_standard = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
 # signatures work such that if the key is found in the filename and the excl
 # strings are NOT found in the filename, then that file is IDd as that signature
 
-signature_relationships = {('FLAIR_cor','FLAIR_COR'):
-                              {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no', 'excl':['AX','ax','axial','AXIAL']},
-                          ('FLAIR_AX', 'T2W_FLAIR'):
-                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'yes', 'excl':['cor','COR','coronal','CORONAL']},
-                          ('3DT1', 'T1W_3D'): 
-                              {'basename': 'axT1', 'register': 'yes', 'skullstrip': 'yes', 'excl':['FLAIR']},
+
+signature_relationships = {('MRA_COW','TOF_HEAD'):
+                              {'basename': 'headMRA', 'register': 'master', 'skullstrip': 'no', 'excl':['MIP'], 'optional':False},
+                           ('MIP*MRA_COW','MIP*TOF_HEAD'):
+                              {'basename': 'headMRA_mip', 'register': 'no', 'skullstrip': 'no', 'excl':[], 'optional':True}
                           }
 
 """
-signature_relationships = {
-                          ('3DT1', 'T1W_3D'): 
-                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'yes', 'excl':['FLAIR']},
+signature_relationships = {('MRA_COW','TOF_HEAD'):
+                              {'basename': 'headMRA', 'register': 'master', 'skullstrip': 'no', 'excl':['WIP_MIP', 'MIP_WIP'], 'optional':True},
+                           ('TOF_NECK',):
+                              {'basename': 'neckMRA', 'register': 'no', 'skullstrip': 'no', 'excl':['WIP_MIP', 'MIP_WIP', 'VWIP'], 'optional':True}
+                          }
+ 
+signature_relationships = {('MRA_COW',):
+                              {'basename': 'headMRA', 'register': 'master', 'skullstrip': 'no', 'excl':['WIP_MIP', 'MIP_WIP']},
+                          ('lica',):
+                              {'basename': 'pc_lica', 'register': 'no', 'skullstrip': 'no', 'excl':[]},
+                          ('rica',):
+                              {'basename': 'pc_rica', 'register': 'no', 'skullstrip': 'no', 'excl':[]},
+                          ('lvert',):
+                              {'basename': 'pc_lvert', 'register': 'no', 'skullstrip': 'no', 'excl':[]},
+                          ('rvert',):
+                              {'basename': 'pc_rvert', 'register': 'no', 'skullstrip': 'no', 'excl':[]},
                           }
 """
-# list of dicts giving parameters for FAST
-# inputs are image signatures
-"""
-fast_params = [
-                {'inputs':['FLAIR_AX', '3DT1'], 'baseout':'fast_FLAIR+T1', 'n':4},
-                {'inputs':['FLAIR_AX'], 'baseout':'fast_FLAIR', 'n':4},
-                {'inputs':['3DT1'], 'baseout':'fast_T1', 'n':4}
-              ]
-"""
-
-
-fast_params = [
-                {'inputs':[('3DT1', 'T1W_3D')], 'baseout':'fast_T1', 'n':3}
-              ]
-
-
-
-#fast_params = []
-
-run_siena = True
-skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
-
-#####
 
 def any_in_str(s, l):
     """
@@ -151,42 +149,12 @@ def get_terminal(path):
 successful = 0
 
 
-"""
-bash_input = sys.argv[1:]
-options, remainder = getopt.getopt(bash_input, "i:f:t:o:", ["infile=","filefolder=","targetfolder=","overwrite="])
-
-for opt, arg in options:
-    if opt in ('-o', '--overwrite'):
-        overwrite = int(arg)
-    elif opt in ('-i', '--infile'):
-        infile = arg
-    elif opt in ('-t', '--targetfolder'):
-        targetfolder = arg
-    elif opt in ('-f', '--filefolder'):
-        filefolder = arg
-        
-        
-try:
-    assert overwrite in (0,1)
-except AssertionError:
-    raise AssertionError('overwrite argument must be 0 (for False) or 1 (for True)')
-    
-try:
-    assert os.path.isdir(targetfolder)
-except AssertionError:
-    raise AssertionError('Target folder does not exist')
-    
-try:
-    assert os.path.isdir(filefolder)
-except AssertionError:
-    raise AssertionError('File folder does not exist')
-"""
-
 # datetime object containing current date and time
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%y-%H+%M")
 message_file_name = os.path.join(targetfolder, f'move_and_prepare_messages_{dt_string}.txt')
 df_file_name = os.path.join(targetfolder, f'move_and_prepare_tabular_{dt_string}.csv')
+trimmed_file_name = os.path.join(targetfolder, f'pt_data.csv')
 message_file = open(message_file_name, 'w')
 message_file.write('Status messages for move_and_prepare\n\nSignatures')
 for key, val in signature_relationships.items():
@@ -194,11 +162,41 @@ for key, val in signature_relationships.items():
 message_file.write('\n\n\n')
 
 #extract pt IDs
-pt_data = pd.read_csv(infile)
+raw_data = pd.read_csv(infile)
+
+for i,val in enumerate(pt_id_cols):
+    mrs = raw_data[pt_id_cols[i]]
+    mrs_alt = raw_data[pt_id_cols_alt[i]]
+    raw_data[rect_name[i]] = mrs_alt.combine_first(mrs)
+    
+
+not_excluded = raw_data['Exclude from Analysis  (choice=exclude)'] == 'Unchecked'
+not_inadequate = raw_data['Result of MRA Head 1'] != 'Technically inadequate'
+is_done = raw_data['Result of MRA Head 1'] != 'Not done'
+not_post_transf = raw_data['Is this patient post-transplant at initial visit?'] != 'Yes'
+normal_or_scd = [any([i,j]) for i,j in zip(raw_data['Hemoglobin genotype'] == 'Normal (AA)', raw_data['Hemoglobin genotype'] == 'SS')]
+
+keep = [all(i) for i in zip(not_excluded, not_inadequate, is_done, not_post_transf, normal_or_scd)] 
+pt_data = raw_data[keep]
+
+has_stenosis = pt_data[pt_data['Is there intracranial stenosis (>50%)?'] == 'Yes']
+is_healthy = pt_data[pt_data['Result of MRA Head 1'] == 'Normal']
+n_stenosis = len(has_stenosis)
+
+add_healthy = is_healthy.sample(n_healthy)
+
+pt_data = has_stenosis.append(add_healthy)
+
+# FOR TESTING
+# pt_data = pt_data.iloc[18:20]
+
 n_unique_pts = len(pt_data)
 
+print(f'We have {n_unique_pts} patients. {len(has_stenosis)} stenosis, {len(add_healthy)} healthy')
+sleep(2)
+
 pt_ids = []
-for col in pt_id_cols:
+for col in rect_name:
     of_interest = list(pt_data[col])
     pt_ids.extend(of_interest)
 
@@ -215,7 +213,7 @@ pt_status = {pt:inner_dict.copy() for pt in pt_ids}
 all_subdirectories = [x[0] for x in os.walk(filefolder)] # list of all possible subdirectories
 
 for i, pt in enumerate(pt_ids):
-        print(f'On patient {pt} ({i+1} of {len(pt_ids)})')
+        print(f'\nOn patient {pt} ({i+1} of {len(pt_ids)})\n')
         candidate_folders = [sub for sub in all_subdirectories if get_terminal(sub) == pt] # check if last subfolder is pt name
         n_cands = len(candidate_folders)
         pt_status[pt]['found_pt'] = n_cands
@@ -241,6 +239,7 @@ for i, pt in enumerate(pt_ids):
         acquired_folder = os.path.join(data_folder, 'Acquired') # where we're looking to pull data from
         
         sig_tracker = {} # to store filepaths to files
+        optional_and_missing = []
         for signature, subdict in signature_relationships.items():
             
             candidate_pars = []
@@ -273,8 +272,12 @@ for i, pt in enumerate(pt_ids):
                 if any(i != 1 for i in n_cand_files):
                     print(f'warning: pt {pt} returned {n_cand_files} for {signature}. using last option')
             else:
-                print(f'pt {pt} has {n_cand_files} candidate par/recs for {signature}. will be skipped')
-                has_required_files = False
+                if subdict['optional']:
+                    print(f'pt {pt} has {n_cand_files} candidate par/recs for {signature}, but this an optional signature')
+                    optional_and_missing.append(signature)
+                else:
+                    print(f'pt {pt} has {n_cand_files} candidate par/recs for {signature}. will be skipped')
+                    has_required_files = False
             
         if not has_required_files: # if we don't have all the files specified, just move on
             continue    
@@ -285,6 +288,8 @@ for i, pt in enumerate(pt_ids):
         
         try:
             for signature, subdict in signature_relationships.items():
+                if signature in optional_and_missing:
+                    continue
                 # move the file, convert to NiFTI and rename
                 shutil.copyfile(sig_tracker[signature]['original_par'], sig_tracker[signature]['moved_par'])
                 shutil.copyfile(sig_tracker[signature]['original_rec'], sig_tracker[signature]['moved_rec'])
@@ -304,6 +309,8 @@ for i, pt in enumerate(pt_ids):
         
         # skullstripping
         for signature, subdict in signature_relationships.items():
+            if signature in optional_and_missing:
+                continue
             if subdict['skullstrip'] == 'yes':
                 sig_tracker[signature]['skullstripped_nifti'] = os.path.join(bin_folder, f'{subdict["basename"]}_stripped.nii.gz')
                 
@@ -315,6 +322,8 @@ for i, pt in enumerate(pt_ids):
             
         # registration
         for signature, subdict in signature_relationships.items():
+            if signature in optional_and_missing:
+                continue
             if subdict['register'] == 'master':
                 master_ref = sig_tracker[signature]['skullstripped_nifti']
                 
@@ -324,6 +333,8 @@ for i, pt in enumerate(pt_ids):
                 os.system(omat_cmd)
                 
         for signature, subdict in signature_relationships.items():
+            if signature in optional_and_missing:
+                continue
             if subdict['register'] not in ('master', 'no'):
                 sig_tracker[signature]['registered_nifti'] = os.path.join(bin_folder, f'{subdict["basename"]}_registered.nii.gz')
                 register_command = f"flirt -in {sig_tracker[signature]['skullstripped_nifti']} -ref {master_ref} -out {sig_tracker[signature]['registered_nifti']}"
@@ -333,35 +344,29 @@ for i, pt in enumerate(pt_ids):
                 
         # move files to their final home :)
         for signature, subdict in signature_relationships.items():
-            sig_tracker[signature]['final_nifti'] = os.path.join(processed_folder, f'{subdict["basename"]}.nii.gz')
+            if signature in optional_and_missing:
+                continue
+            sig_tracker[signature]['final_nifti'] = os.path.join(master_output_folder, f'{subdict["basename"]}.nii.gz')
             shutil.copyfile(sig_tracker[signature]['registered_nifti'], sig_tracker[signature]['final_nifti'])
                 
-        pt_status[pt]['successful'] = 1
-        successful += 1
-        
-        
-        # run FAST
-        fast_folder = os.path.join(master_output_folder, 'fast')
-        
-        if fast_params: # if fast_params is not empty
-            os.mkdir(fast_folder)
-        
-        for param_dict in fast_params:
-            construction = f'fast -n {param_dict["n"]} -o {os.path.join(fast_folder, param_dict["baseout"])} -f {skullstrip_f_val}'
-            if len(param_dict['inputs']) > 1:
-                construction += f' -S {len(param_dict["inputs"])}'
-            for sig in param_dict['inputs']:
-                construction += f' {sig_tracker[sig]["final_nifti"]}'
-                
-            print(f'Construction:\n{construction}')
-            os.system(construction)
+        # delete the subfolders
             
-        # run SIENA
-        if run_siena:
-            construction = f'sienax {sig_tracker[signature]["raw_nifti"]} -B "-f {skullstrip_f_val}"'
-                
-            print(f'Construction:\n{construction}')
-            os.system(construction)
+        folder_glob = np.array(glob.glob(os.path.join(master_output_folder, '*/'))) # list of all possible subdirectories
+        for f in folder_glob:
+            shutil.rmtree(f)
+            
+        # if the master folder is empty, that means that all files were optionally, but none were found. I'd call that a failure and delete the folder
+        # but otherwise it's fine
+        file_glob = np.array(glob.glob(os.path.join(master_output_folder, '*'))) # list of all files
+        if len(file_glob) == 0:
+            print(f'No files transferred to {master_output_folder}: deleting folder and marking as failure')
+            pt_status[pt]['successful'] = 0
+            successful += 0
+            shutil.rmtree(master_output_folder)
+        else: 
+            pt_status[pt]['successful'] = 1
+            successful += 1
+        
 
 
 # write status log
@@ -381,3 +386,10 @@ for key, val in pt_status.items():
 
 message_file.close()
 df.to_csv(df_file_name)
+
+
+only_success = df[df['successful']==1]
+
+keep_in_trim = [True if i in only_success.index else False for i in pt_data[rect_name[0]]]
+trim_pt_data = pt_data[keep_in_trim]
+trim_pt_data.to_csv(trimmed_file_name)
