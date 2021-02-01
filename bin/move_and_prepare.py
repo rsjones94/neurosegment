@@ -38,9 +38,9 @@ import pandas as pd
 
 overwrite = 0
 
-infile = '/Users/manusdonahue/Documents/Sky/brain_lesion_masks/more_scd.csv'
+infile = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
 
-targetfolder = '/Users/manusdonahue/Documents/Sky/brain_lesion_masks/more_scd/'
+targetfolder = '/Users/manusdonahue/Documents/Sky/fsl_segmentations/'
 
 filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped/'
 
@@ -49,7 +49,7 @@ filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped/'
 # column names in the csv that contain pt IDs of interest
 #pt_id_cols = ['MRI 1 - MR ID', 'MRI 2 - MR ID', 'MRI 3 - MR ID']
 #pt_id_cols = ['mr1_mr_id_real', 'mr2_mr_id_real', 'mr3_mr_id_real']
-pt_id_cols = ['mr_id']
+pt_id_cols = ['mr1_mr_id_real']
 
 # dcm2nii is an executable packaged with MRIcron that ca be ued to turn par-recs into NiFTIs
 path_to_dcm2nii = '/Users/manusdonahue/Documents/Sky/mricron/dcm2nii64'
@@ -71,10 +71,8 @@ mni_standard = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
                           }"""
     
 signature_relationships = {
-                          ('FLAIR_AX', 'T2W_FLAIR'):
-                              {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'no', 'excl':['cor','COR','coronal','CORONAL']},
                           ('3DT1', 'T1W_3D'): 
-                              {'basename': 'axT1', 'register': 'no', 'skullstrip': 'no', 'excl':['FLAIR']},
+                              {'basename': 'axT1', 'register': 'master', 'skullstrip': 'no', 'excl':['FLAIR']},
                           }
 
 """
@@ -94,6 +92,7 @@ fast_params = [
 
 
 
+
 fast_params = [
                 {'inputs':[('3DT1', 'T1W_3D')], 'baseout':'fast_T1', 'n':3}
               ]
@@ -102,7 +101,8 @@ fast_params = [
 
 fast_params = []
 
-run_siena = False
+run_siena = True
+
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
 #####
@@ -372,19 +372,20 @@ for i, pt in enumerate(pt_ids):
             print(f'Construction:\n{construction}')
             os.system(construction)
             
-            
+        """  
         # clean up
         # move files to their final home :)
         for signature, subdict in signature_relationships.items():
             #sig_tracker[signature]['final_nifti'] = os.path.join(master_output_folder, f'{subdict["basename"]}.nii.gz')
             final_resting_place = os.path.join(master_output_folder, f'{subdict["basename"]}.nii.gz')
             shutil.copyfile(sig_tracker[signature]['final_nifti'], final_resting_place)
-                
+               
         # delete the subfolders
             
         folder_glob = np.array(glob.glob(os.path.join(master_output_folder, '*/'))) # list of all possible subdirectories
         for f in folder_glob:
             shutil.rmtree(f)
+        """
 
 
 # write status log

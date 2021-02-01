@@ -69,6 +69,8 @@ mni_standard = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
 # signatures work such that if the key is found in the filename and the excl
 # strings are NOT found in the filename, then that file is IDd as that signature
 
+# note that duplicate patients who were given an alternate study ID need to be manually removed
+
 
 signature_relationships = {('MRA_COW','TOF_HEAD'):
                               {'basename': 'headMRA', 'register': 'master', 'skullstrip': 'no', 'excl':['MIP'], 'optional':False},
@@ -170,13 +172,14 @@ for i,val in enumerate(pt_id_cols):
     raw_data[rect_name[i]] = mrs_alt.combine_first(mrs)
     
 
-not_excluded = raw_data['Exclude from Analysis  (choice=exclude)'] == 'Unchecked'
+#not_excluded = raw_data['Exclude from Analysis  (choice=exclude)'] == 'Unchecked'
 not_inadequate = raw_data['Result of MRA Head 1'] != 'Technically inadequate'
 is_done = raw_data['Result of MRA Head 1'] != 'Not done'
 not_post_transf = raw_data['Is this patient post-transplant at initial visit?'] != 'Yes'
 normal_or_scd = [any([i,j]) for i,j in zip(raw_data['Hemoglobin genotype'] == 'Normal (AA)', raw_data['Hemoglobin genotype'] == 'SS')]
 
-keep = [all(i) for i in zip(not_excluded, not_inadequate, is_done, not_post_transf, normal_or_scd)] 
+#keep = [all(i) for i in zip(not_excluded, not_inadequate, is_done, not_post_transf, normal_or_scd)]
+keep = [all(i) for i in zip(not_inadequate, is_done, not_post_transf, normal_or_scd)] 
 pt_data = raw_data[keep]
 
 has_stenosis = pt_data[pt_data['Is there intracranial stenosis (>50%)?'] == 'Yes']
