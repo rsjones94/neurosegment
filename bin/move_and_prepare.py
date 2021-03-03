@@ -299,7 +299,7 @@ for i, pt in enumerate(pt_ids):
                 shutil.copyfile(sig_tracker[signature]['original_rec'], sig_tracker[signature]['moved_rec'])
                 
                 moved_par_without_ext = sig_tracker[signature]['moved_par'][:-4]
-                conversion_command = f'{path_to_dcm2nii} -o {bin_folder} -a n -i n -d n -p n -e n -f y -v n {sig_tracker[signature]["moved_par"]}'
+                conversion_command = f'{path_to_dcm2nii} -a n -i n -d n -p n -e n -f y -v n -o {bin_folder} {sig_tracker[signature]["moved_par"]}'
                 
                 with suppress_stdout():
                     os.system(conversion_command)
