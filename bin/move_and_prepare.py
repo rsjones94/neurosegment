@@ -38,9 +38,9 @@ import pandas as pd
 
 overwrite = 0
 
-infile = '/Users/manusdonahue/Documents/Sky/all_scan_ids.csv'
+infile = '/Users/manusdonahue/Documents/Sky/brain_lesion_masks/newest_additions/newest.csv'
 
-targetfolder = '/Users/manusdonahue/Documents/Sky/fsl_segmentations/'
+targetfolder = '/Users/manusdonahue/Documents/Sky/brain_lesion_masks/newest_additions/'
 
 filefolder = '/Volumes/DonahueDataDrive/Data_sort/SCD_Grouped/'
 
@@ -62,18 +62,20 @@ mni_standard = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
 # signatures work such that if the key is found in the filename and the excl
 # strings are NOT found in the filename, then that file is IDd as that signature
 
-"""signature_relationships = {('FLAIR_cor','FLAIR_COR'):
+signature_relationships = {('FLAIR_cor','FLAIR_COR'):
                               {'basename': 'corFLAIR', 'register': 'no', 'skullstrip': 'no', 'excl':['AX','ax','axial','AXIAL']},
                           ('FLAIR_AX', 'T2W_FLAIR'):
                               {'basename': 'axFLAIR', 'register': 'master', 'skullstrip': 'no', 'excl':['cor','COR','coronal','CORONAL']},
                           ('3DT1', 'T1W_3D'): 
                               {'basename': 'axT1', 'register': 'no', 'skullstrip': 'no', 'excl':['FLAIR']},
-                          }"""
-    
+                          }
+
+'''    
 signature_relationships = {
                           ('3DT1', 'T1W_3D'): 
                               {'basename': 'axT1', 'register': 'master', 'skullstrip': 'no', 'excl':['FLAIR']},
                           }
+'''
 
 """
 signature_relationships = {
@@ -101,7 +103,7 @@ fast_params = [
 
 fast_params = []
 
-run_siena = True
+run_siena = False
 
 skullstrip_f_val = 0.15 # variable for the BET skullstripping algorithm
 
@@ -270,17 +272,17 @@ for i, pt in enumerate(pt_ids):
             pt_status[pt][signature] = n_cand_files
             if all([i >= 1 for i in n_cand_files]):
                 
-                sig_tracker[signature] = {'original_par': candidate_pars[-1]}
-                sig_tracker[signature]['original_rec'] = candidate_recs[-1]
+                sig_tracker[signature] = {'original_par': candidate_pars[0]}
+                sig_tracker[signature]['original_rec'] = candidate_recs[0]
                 
-                moved_par = os.path.join(bin_folder, get_terminal(candidate_pars[-1]))
-                moved_rec = os.path.join(bin_folder, get_terminal(candidate_recs[-1]))
+                moved_par = os.path.join(bin_folder, get_terminal(candidate_pars[0]))
+                moved_rec = os.path.join(bin_folder, get_terminal(candidate_recs[0]))
                 
                 sig_tracker[signature]['moved_par'] = moved_par
                 sig_tracker[signature]['moved_rec'] = moved_rec
                 
                 if any(i != 1 for i in n_cand_files):
-                    print(f'warning: pt {pt} returned {n_cand_files} for {signature}. using last option')
+                    print(f'warning: pt {pt} returned {n_cand_files} for {signature}. using first option')
             else:
                 print(f'pt {pt} has {n_cand_files} candidate par/recs for {signature}. will be skipped')
                 has_required_files = False
